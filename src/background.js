@@ -464,6 +464,7 @@ function buildMessages(action, payload) {
     const system = [
       'Tu améliores un texte fourni par l’utilisateur.',
       'Conserve la même langue que le texte, le même sens et les mêmes faits.',
+      'Conserve la syntaxe Markdown éventuelle (`**gras**`, listes, titres).',
       instructions[action],
       'N’ajoute aucun commentaire, aucun préambule, aucun guillemet.',
       'Réponds uniquement avec le texte final.',
@@ -484,6 +485,7 @@ function buildMessages(action, payload) {
       'Règles :',
       '- Conserve le sens, le ton, le registre et le niveau de détail.',
       '- Conserve la mise en forme : paragraphes, retours à la ligne, listes, ponctuation.',
+      '- Le texte peut contenir du Markdown (`**gras**`, listes `- `, titres). Conserve exactement cette syntaxe, sans la traduire.',
       '- Ne traduis pas les noms propres, marques, URL, chemins de fichiers ni le code.',
       '- N’ajoute aucun commentaire, aucune note, aucun guillemet autour du résultat.',
       languages.sameLanguage
@@ -510,6 +512,7 @@ function buildMessages(action, payload) {
       '- N’ajoute aucune information et n’en supprime aucune.',
       '- Améliore la clarté, la fluidité et la concision ; supprime lourdeurs et répétitions.',
       '- Conserve la mise en forme (paragraphes, listes) et le niveau de détail.',
+      '- Conserve la syntaxe Markdown éventuelle (`**gras**`, listes, titres).',
       '- Ton attendu : ' + tone + '.',
       '',
       'Réponds uniquement avec le texte reformulé, sans préambule ni commentaire.',
@@ -529,7 +532,7 @@ function buildMessages(action, payload) {
       '1. Reformule-le en ' + languages.sourceName + ' pour le rendre plus clair et plus fluide, sans changer le sens.',
       '2. Traduis la version reformulée en ' + languages.targetName + '.',
       '',
-      'Contraintes : conserve les faits, les chiffres et la mise en forme ; n’ajoute rien ; ne commente pas.',
+      'Contraintes : conserve les faits, les chiffres et la mise en forme ; conserve la syntaxe Markdown éventuelle ; n’ajoute rien ; ne commente pas.',
       'Réponds uniquement avec la version finale en ' + languages.targetName + '.',
     ].join('\n');
 
@@ -547,7 +550,7 @@ function buildMessages(action, payload) {
       'Règles :',
       '- Ne change ni le sens, ni le style, ni la structure.',
       '- Ne reformule pas inutilement : corrige seulement ce qui doit l’être.',
-      '- Conserve la mise en forme.',
+      '- Conserve la mise en forme et la syntaxe Markdown éventuelle.',
       '',
       'Réponds uniquement avec le texte corrigé.',
     ].join('\n');

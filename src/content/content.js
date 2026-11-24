@@ -436,6 +436,83 @@
     return '';
   }
 
+  function selectionMarkdown(range) {
+    let fragment;
+    try {
+      fragment = range.cloneContents();
+    } catch {
+      return '';
+    }
+
+    const parts = [];
+
+    const walk = (node) => {
+      if (node.nodeType === 3) {
+        parts.push(node.nodeValue.replace(/\s+/g, ' '));
+        return;
+      }
+      if (node.nodeType !== 1) return;
+
+      const tag = node.tagName.toLowerCase();
+      if (tag === 'script' || tag === 'style' || tag === 'noscript') return;
+
+      if (tag === 'br') {
+        parts.push('\n');
+        return;
+      }
+
+      if (tag === 'pre') {
+        const code = node.textContent.replace(/^\n+|\n+$/g, '');
+        parts.push('\n\n```\n' + code + '\n```\n\n');
+        return;
+      }
+
+      const heading = /^h([1-6])$/.exec(tag);
+      const list = tag === 'ul' || tag === 'ol';
+      const item = tag === 'li';
+      const quote = tag === 'blockquote';
+      const bold = tag === 'strong' || tag === 'b';
+      const italic = tag === 'em' || tag === 'i';
+      const code = tag === 'code';
+
+      if (bold) parts.push('**');
+      if (italic) parts.push('*');
+      if (code) parts.push('`');
+      if (heading) parts.push('\n\n' + '#'.repeat(Number(heading[1])) + ' ');
+      if (quote) parts.push('\n\n> ');
+
+      if (item) {
+        const parent = node.parentElement;
+        if (parent && parent.tagName === 'OL') {
+          const index = Array.prototype.indexOf.call(parent.children, node) + 1;
+          parts.push('\n' + index + '. ');
+        } else {
+          parts.push('\n- ');
+        }
+      } else if (list) {
+        parts.push('\n');
+      }
+
+      for (const child of node.childNodes) walk(child);
+
+      if (bold) parts.push('**');
+      if (italic) parts.push('*');
+      if (code) parts.push('`');
+
+      if (heading || quote || list) parts.push('\n\n');
+      else if (tag === 'p' || tag === 'div' || tag === 'section' || tag === 'article') parts.push('\n\n');
+    };
+
+    for (const child of fragment.childNodes) walk(child);
+
+    return parts
+      .join('')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+      .slice(0, 20000);
+  }
+
   function readSelection() {
     const active = document.activeElement;
     if (isTextField(active)) {
@@ -481,6 +558,7 @@
       rect: rect || null,
     };
     candidate.context = readContext(candidate);
+    candidate.richText = selectionMarkdown(range);
     return candidate;
   }
 
@@ -804,7 +882,7 @@
     const flushParagraph = () => {
       if (!paragraph.length) return;
       const element = document.createElement('p');
-      appendInline(element, paragraph.join(' '));
+      appendInline(element, paragraph.join('\n'));
       fragment.appendChild(element);
       paragraph = [];
     };
@@ -900,6 +978,21 @@
     flushParagraph();
     flushList();
     return fragment;
+  }
+
+  function markdownToPlain(text) {
+    return String(text || '')
+      .replace(/```[a-zA-Z0-9_-]*\n?/g, '')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^\s*[-*+]\s+/gm, '- ')
+      .replace(/^\s*>\s?/gm, '')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/__([^_]+)__/g, '$1')
+      .replace(/\*([^*\n]+)\*/g, '$1')
+      .replace(/(?<!\w)_([^_\n]+)_(?!\w)/g, '$1')
+      .replace(/`([^`\n]+)`/g, '$1')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
   }
 
   function setResultView() {
@@ -1218,7 +1311,7 @@
       open.appendChild(
         node('span', {
           class: 'lili-history-preview',
-          text: entry.text.replace(/[#*_`>]/g, '').replace(/\s+/g, ' ').slice(0, 140),
+          text: markdownToPlain(entry.text).replace(/\s+/g, ' ').slice(0, 140),
         })
       );
       item.appendChild(open);
@@ -1331,7 +1424,7 @@
 
     return {
       action,
-      text: isPage ? '' : selection.text,
+      text: isPage ? '' : selection.richText || selection.text,
       page: isPage ? extractPage() : null,
       context: { title: document.title, url: location.href },
       contextText: isPage ? '' : (selection && selection.context) || '',
@@ -1518,7 +1611,7 @@
 
   async function doCopy() {
     if (!job || !job.text.trim()) return;
-    const ok = await copyText(job.text.trim());
+    const ok = await copyText(markdownToPlain(job.text));
     toast(ok ? 'Copié dans le presse-papiers.' : 'Copie impossible.');
   }
 
@@ -1577,7 +1670,7 @@
     ui.confirmBtn.hidden = false;
     ui.cancelBtn.hidden = false;
     ui.body.scrollTop = 0;
-    renderDiff(lastRequest.selection.text, job.text.trim());
+    renderDiff(lastRequest.selection.text, markdownToPlain(job.text.trim()));
     setStatus('Vérifiez les modifications avant de remplacer.');
   }
 
@@ -1675,7 +1768,7 @@
   function replaceSelection(selection, text) {
     if (!selection) return false;
     if (selection.kind === 'input') {
-      return replaceInField(selection.el, selection.start, selection.end, text);
+      return replaceInField(selection.el, selection.start, selection.end, markdownToPlain(text));
     }
     if (selection.kind === 'contenteditable') {
       return replaceInEditable(selection.el, selection.range, text);
@@ -1732,8 +1825,62 @@
     return true;
   }
 
-  function replaceInEditable(el, range, text) {
+  const HTML_TAGS = new Set([
+    'p', 'br', 'hr', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote',
+  ]);
+
+  function escapeHtml(value) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return String(value).replace(/[&<>"']/g, (char) => map[char]);
+  }
+
+  function nodeToHtml(node, inPre, inline) {
+    if (node.nodeType === 3) {
+      const escaped = escapeHtml(node.nodeValue);
+      return inPre ? escaped : escaped.replace(/\n/g, '<br>');
+    }
+    if (node.nodeType !== 1) return '';
+
+    const tag = node.tagName.toLowerCase();
+    const inner = Array.from(node.childNodes)
+      .map((child) => nodeToHtml(child, inPre || tag === 'pre', inline))
+      .join('');
+
+    if (!HTML_TAGS.has(tag)) return inner;
+    if (tag === 'br' || tag === 'hr') return '<' + tag + '>';
+
+    if (inline) {
+      if (tag === 'p' || tag === 'div' || tag === 'section' || tag === 'article') {
+        return inner + '<br><br>';
+      }
+      if (/^h[1-6]$/.test(tag)) return '<strong>' + inner + '</strong><br>';
+      if (tag === 'blockquote') return inner + '<br>';
+      if (tag === 'li') return '• ' + inner + '<br>';
+      if (tag === 'ul' || tag === 'ol') return inner;
+    }
+
+    return '<' + tag + '>' + inner + '</' + tag + '>';
+  }
+
+  function fragmentToHtml(fragment, inline) {
+    let html = '';
+    for (const node of fragment.childNodes) html += nodeToHtml(node, false, inline);
+    if (inline) html = html.replace(/(?:<br>)+$/, '');
+    return html;
+  }
+
+  function replaceInEditable(el, range, markdown) {
     if (!el || !el.isConnected) return false;
+
+    const plain = markdownToPlain(markdown);
+    const fragment = renderMarkdown(markdown);
+    const formatted = !!fragment.querySelector(
+      'strong, em, ul, ol, li, h1, h2, h3, h4, h5, h6, blockquote, pre, code'
+    );
+    const hasBlock = !!fragment.querySelector(
+      'ul, ol, li, pre, blockquote, h1, h2, h3, h4, h5, h6'
+    );
 
     try {
       el.focus({ preventScroll: true });
@@ -1754,10 +1901,21 @@
     }
 
     let ok = false;
-    try {
-      ok = document.execCommand('insertText', false, text);
-    } catch {
-      ok = false;
+
+    if (formatted) {
+      try {
+        ok = document.execCommand('insertHTML', false, fragmentToHtml(fragment, !hasBlock));
+      } catch {
+        ok = false;
+      }
+    }
+
+    if (!ok) {
+      try {
+        ok = document.execCommand('insertText', false, plain);
+      } catch {
+        ok = false;
+      }
     }
 
     if (!ok) {
@@ -1767,15 +1925,13 @@
         target.selectNodeContents(el);
       }
       target.deleteContents();
-      const node = document.createTextNode(text);
+      const node = document.createTextNode(plain);
       target.insertNode(node);
       target.setStartAfter(node);
       target.collapse(true);
       selection.removeAllRanges();
       selection.addRange(target);
-      el.dispatchEvent(
-        new Event('input', { bubbles: true, composed: true })
-      );
+      el.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
     }
 
     return true;

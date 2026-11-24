@@ -146,8 +146,12 @@ function handler(flavor) {
         res.end(JSON.stringify({ error: { message: 'system messages are not supported' } }));
         return;
       }
-      text = `OVH-TRANSLATION[${payload.source_language}->${payload.target_language}]: ${MOCK.translate}`;
-      console.log(`[mock:${flavor}] ovh-translate ${payload.source_language}->${payload.target_language}`);
+      const rich = /\*\*|(^|\n)#{1,6}\s|(^|\n)\s*[-*+]\s/.test(user);
+      const label = `OVH-TRANSLATION[${payload.source_language}->${payload.target_language}]`;
+      text = rich
+        ? `${label}:\n**Translated title**\n- First line\n- Second line`
+        : `${label}: ${MOCK.translate}`;
+      console.log(`[mock:${flavor}] ovh-translate ${payload.source_language}->${payload.target_language}${rich ? ' (rich)' : ''}`);
     } else {
       console.log(`[mock:${flavor}] ${pickKind(system, flavor)} · stream=${!!payload.stream}`);
     }

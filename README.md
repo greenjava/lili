@@ -17,12 +17,12 @@ intermediate server.
 
 | Action | On a selection | In a text field | Shortcut |
 | --- | --- | --- | --- |
-| Translate (FR ↔ EN auto) | yes | **replaces in place** | `Alt+Shift+T` |
-| Rephrase (adjustable tone) | yes | **replaces in place** | `Alt+Shift+R` |
+| Translate (FR ↔ EN auto) | yes | **replaces in place** | `Ctrl+Shift+Y` |
+| Rephrase (adjustable tone) | yes | **replaces in place** | `Ctrl+Shift+U` |
 | Rephrase then translate | yes | **replaces in place** | — |
-| Summarize | yes | result panel | `Alt+Shift+D` |
+| Summarize | yes | result panel | `Ctrl+Shift+H` |
 | Fix spelling and grammar | yes | **replaces in place** | — |
-| Summarize the whole page | — | — | `Alt+Shift+S` |
+| Summarize the whole page | — | — | `Ctrl+Shift+1` |
 
 - **Floating toolbar** near the selection, **context menu** (right click), **popup** (current
   selection, pasted text, or whole page) and **keyboard shortcuts**.
@@ -43,6 +43,9 @@ intermediate server.
   quotes. Copy and replace always use the raw text; rendering can be disabled in the settings.
 - **In-place replacement** in `input`, `textarea` and `contenteditable` fields, with undo
   (`Ctrl+Z` / `Cmd+Z`) and an optional automatic replacement mode.
+- **Formatting preservation**: rich selections are captured as Markdown (line breaks, bold/italic,
+  lists, headings), sent with a formatting instruction, and rendered as Markdown. Replacing in a
+  `contenteditable` field inserts formatted HTML; plain inputs receive plain text.
 - **Page summaries with map-reduce**: the main content is extracted, split into sections, summarized
   section by section, then merged. Long pages are not silently truncated.
 - **Per-task routing**: one connection and one model per action, with a fallback connection.
@@ -141,7 +144,9 @@ authentication. Non-chat models (TTS, Whisper, embeddings, images) are filtered 
 - **`Olala-v1.0-translate`** (OVHcloud) is a translation-only model. Lili detects it and sends
   `source_language` / `target_language` in English, without a system prompt. Its 8k-token context
   limits a selection to **12,000 characters** (with an explicit error beyond that). On
-  “Rephrase then translate”, it translates without rephrasing.
+  “Rephrase then translate”, it translates without rephrasing. As no system prompt is sent, exact
+  Markdown preservation depends on this model; use a general-purpose model when formatting must be
+  guaranteed.
 - **`Olala-v1.0-summarise`** is a regular chat model with a large context, suited to page summaries.
 - **OpenCode Zen and Go** use `chat/completions`. Free models reserved for the OpenCode client
   return 403 elsewhere; use a paid model or a Go subscription. The session header required by Go is
@@ -183,7 +188,7 @@ OLLAMA_ORIGINS="*" ollama serve
    - **Replace** (editable fields) opens a before/after diff; **Confirm** applies it, and
      `Ctrl+Z` / `Cmd+Z` undoes it;
    - **Stop** interrupts a running generation and keeps the partial result;
-   - **Copy** sends the result to the clipboard;
+   - **Copy** sends the plain text (Markdown markers removed) to the clipboard;
    - **Retry** runs the same request again;
    - the **clock icon** opens the local history: star favorites, click an entry to restore it, or
      clear the list;
@@ -192,7 +197,7 @@ OLLAMA_ORIGINS="*" ollama serve
 Drag the panel by its header to move it, and resize it from the grip in the bottom-right corner. The
 chosen size is kept for the next results.
 
-The **Page** button in the toolbar, the popup and `Alt+Shift+S` summarize the current page. The popup
+The **Page** button in the toolbar, the popup and `Ctrl+Shift+1` summarize the current page. The popup
 also handles pasted text.
 
 ## Privacy
@@ -235,6 +240,7 @@ also handles pasted text.
 | “403” with OpenCode | Free models are reserved for the OpenCode client: use a paid model or Go. |
 | No toolbar on a page | Browser page, PDF, selection inside an iframe, or the toolbar is disabled in the settings. |
 | Nothing happens after reloading the extension | Reload the tab: content scripts are not injected into already open pages. |
+| A keyboard shortcut does nothing | Chrome may leave a suggested shortcut unassigned when it conflicts. Check `chrome://extensions/shortcuts` and set it manually. `Alt+Shift` is also the keyboard-layout switch on many Linux desktops; the defaults use `Ctrl+Shift` for this reason. |
 
 ## Development
 

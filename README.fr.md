@@ -17,12 +17,12 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
 
 | Action | Sur une sélection | Dans un champ texte | Raccourci |
 | --- | --- | --- | --- |
-| Traduire (FR ↔ EN automatique) | oui | **remplace sur place** | `Alt+Maj+T` |
-| Reformuler (ton réglable) | oui | **remplace sur place** | `Alt+Maj+R` |
+| Traduire (FR ↔ EN automatique) | oui | **remplace sur place** | `Ctrl+Maj+Y` |
+| Reformuler (ton réglable) | oui | **remplace sur place** | `Ctrl+Maj+U` |
 | Reformuler puis traduire | oui | **remplace sur place** | — |
-| Résumer | oui | panneau de résultat | `Alt+Maj+D` |
+| Résumer | oui | panneau de résultat | `Ctrl+Maj+H` |
 | Corriger l’orthographe et la grammaire | oui | **remplace sur place** | — |
-| Résumer la page entière | — | — | `Alt+Maj+S` |
+| Résumer la page entière | — | — | `Ctrl+Maj+1` |
 
 - **Barre flottante** près de la sélection, **menu contextuel** (clic droit), **popup** (sélection
   courante, texte collé ou page entière) et **raccourcis clavier**.
@@ -44,6 +44,10 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
   réglages.
 - **Remplacement sur place** dans les champs `input`, `textarea` et `contenteditable`, avec annulation
   (`Ctrl+Z` / `Cmd+Z`) et un mode de remplacement automatique optionnel.
+- **Conservation du formatage** : les sélections riches sont capturées en Markdown (retours à la
+  ligne, gras/italique, listes, titres), envoyées avec une consigne de formatage et rendues en
+  Markdown. Le remplacement dans un `contenteditable` insère du HTML formaté ; les champs simples
+  reçoivent du texte brut.
 - **Résumé de page en map-reduce** : le contenu principal est extrait, découpé en sections, résumé
   section par section, puis fusionné. Les pages longues ne sont pas tronquées silencieusement.
 - **Routage par tâche** : une connexion et un modèle par action, avec une connexion de repli.
@@ -144,7 +148,8 @@ images) sont filtrés.
 - **`Olala-v1.0-translate`** (OVHcloud) est un modèle de traduction seul. Lili le détecte et envoie
   `source_language` / `target_language` en anglais, sans prompt système. Son contexte de 8k tokens
   limite une sélection à **12 000 caractères** (erreur explicite au-delà). Sur « Reformuler puis
-  traduire », il traduit sans reformuler.
+  traduire », il traduit sans reformuler. Aucun prompt système n’étant envoyé, la conservation exacte
+  du Markdown dépend de ce modèle ; utilisez un modèle généraliste si le formatage doit être garanti.
 - **`Olala-v1.0-summarise`** est un modèle de chat classique avec un contexte large, adapté aux
   résumés de page.
 - **OpenCode Zen et Go** utilisent `chat/completions`. Les modèles gratuits réservés au client
@@ -188,7 +193,7 @@ OLLAMA_ORIGINS="*" ollama serve
    - **Remplacer** (champs éditables) ouvre un diff avant/après ; **Confirmer** applique le
      remplacement, `Ctrl+Z` / `Cmd+Z` annule ;
    - **Arrêter** interrompt une génération en cours et conserve le résultat partiel ;
-   - **Copier** place le résultat dans le presse-papiers ;
+   - **Copier** place le texte brut (sans marqueurs Markdown) dans le presse-papiers ;
    - **Relancer** rejoue la même demande ;
    - l’**icône horloge** ouvre l’historique local : ajouter aux favoris, cliquer une entrée pour la
      restaurer, ou effacer la liste ;
@@ -197,7 +202,7 @@ OLLAMA_ORIGINS="*" ollama serve
 Faites glisser le panneau par son en-tête pour le déplacer, et redimensionnez-le par la poignée en bas
 à droite. La taille choisie est conservée pour les résultats suivants.
 
-Le bouton **Page** de la barre, le popup et `Alt+Maj+S` résument la page courante. Le popup permet
+Le bouton **Page** de la barre, le popup et `Ctrl+Maj+1` résument la page courante. Le popup permet
 aussi de traiter un texte collé.
 
 ## Confidentialité
@@ -244,6 +249,7 @@ aussi de traiter un texte collé.
 | « 403 » avec OpenCode | Les modèles gratuits sont réservés au client OpenCode : utilisez un modèle payant ou Go. |
 | Pas de barre sur une page | Page interne du navigateur, PDF, sélection dans une iframe, ou barre désactivée dans les réglages. |
 | Rien ne se passe après un rechargement de l’extension | Rechargez l’onglet : les content scripts ne sont pas réinjectés dans les pages déjà ouvertes. |
+| Un raccourci clavier ne fait rien | Chrome peut ne pas assigner un raccourci suggéré en cas de conflit. Vérifiez `chrome://extensions/shortcuts` et définissez-le manuellement. `Alt+Maj` est aussi le changement de disposition clavier sur beaucoup de bureaux Linux ; les valeurs par défaut utilisent `Ctrl+Maj` pour cette raison. |
 
 ## Développement
 

@@ -231,6 +231,17 @@ async function main() {
     const extId = new URL(sw.url()).host;
     console.log('Extension ID :', extId);
 
+    const swWorker = await sw.worker();
+    const commands = await swWorker.evaluate(() => chrome.commands.getAll());
+    const assignedShortcuts = commands.filter(
+      (command) => command.name !== '_execute_action' && command.shortcut
+    );
+    check(
+      'raccourcis : assignés',
+      assignedShortcuts.length === 4,
+      JSON.stringify(commands.map((command) => [command.name, command.shortcut]))
+    );
+
     // --- options ---
     const options = await browser.newPage();
     options.on('console', (m) => m.type() === 'error' && consoleErrors.push('options: ' + m.text()));
@@ -479,7 +490,47 @@ async function main() {
       editableText
     );
 
-    // 3. Résumé de sélection
+    // 3. Rich selection: formatting is captured, rendered and inserted back
+    await selectElement(demo, 'rich');
+    await waitBar(demo);
+    await clickAction(demo, 'translate');
+    await waitResult(demo);
+
+    const richRendered = await shadow(demo, `(() => {
+      const text = root.querySelector('.lili-text');
+      return {
+        strong: text.querySelectorAll('strong').length,
+        items: text.querySelectorAll('ul li').length,
+      };
+    })()`);
+    check(
+      'formatage : Markdown capturé et rendu',
+      richRendered.strong >= 1 && richRendered.items >= 2,
+      JSON.stringify(richRendered)
+    );
+
+    await clickUi(demo, 'replace');
+    await demo.waitForFunction(
+      () => !!document.getElementById('lili-root')?.shadowRoot?.querySelector('.lili-diff'),
+      { timeout: 5000 }
+    );
+    await clickUi(demo, 'confirm');
+    await sleep(300);
+
+    const richInserted = await demo.evaluate(() => {
+      const element = document.getElementById('rich');
+      return {
+        strong: element.querySelectorAll('strong').length,
+        items: element.querySelectorAll('ul li').length,
+      };
+    });
+    check(
+      'formatage : remplacement riche dans contenteditable',
+      richInserted.strong >= 1 && richInserted.items >= 2,
+      JSON.stringify(richInserted)
+    );
+
+    // 4. Résumé de sélection
     await selectElement(demo, 'editable');
     await waitBar(demo);
     await clickAction(demo, 'summarize');
@@ -489,7 +540,7 @@ async function main() {
     check('résumé de sélection : puces reçues', summary.includes('Il conserve les chiffres'), summary);
     check('résumé : pas de bouton remplacer', !(await shadow(demo, "!root.querySelector('[data-ui=\"replace\"]').hidden")));
 
-    // 4. Résumé de page (map-reduce)
+    // 5. Résumé de page (map-reduce)
     await selectElement(demo, 'editable');
     await waitBar(demo);
     await clickAction(demo, 'summarize_page');
@@ -524,7 +575,7 @@ async function main() {
 
     await shot(demo, '04-panel-page-summary');
 
-    // 5. Follow-up actions
+    // 6. Follow-up actions
     await shadow(demo, "root.querySelector('[data-followup=\"refine_shorter\"]').click()");
     await waitResult(demo);
     const refined = await panelText(demo);
@@ -539,7 +590,7 @@ async function main() {
       restored.slice(0, 80)
     );
 
-    // 6. Stop a running generation
+    // 7. Stop a running generation
     await shadow(demo, "root.querySelector('[data-followup=\"refine_longer\"]').click()");
     await demo.waitForFunction(
       () => {
@@ -561,7 +612,7 @@ async function main() {
     check('arrêt : génération stoppée', /arrêtée/i.test(stoppedStatus), stoppedStatus);
     check('arrêt : panneau conservé', !(await shadow(demo, "root.querySelector('.lili-panel').hidden")));
 
-    // 7. History and favorites
+    // 8. History and favorites
     await sleep(400);
     await clickUi(demo, 'history');
     await demo.waitForFunction(
@@ -594,7 +645,7 @@ async function main() {
     check('historique : résultat réouvert', historyText.length > 10, historyText.slice(0, 60));
     await clickUi(demo, 'close');
 
-    // 8. Selection context
+    // 9. Selection context
     await options.evaluate(
       (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
       { ...SETTINGS, ui: { ...SETTINGS.ui, context: true } }
@@ -617,7 +668,7 @@ async function main() {
     check('contexte : paragraphe transmis', contextResult.startsWith('[CONTEXT]'), contextResult.slice(0, 60));
     await clickUi(demo, 'close');
 
-    // 9. Direct mode
+    // 10. Direct mode
     await options.evaluate(
       (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
       { ...SETTINGS, ui: { ...SETTINGS.ui, directMode: true } }
@@ -638,7 +689,7 @@ async function main() {
     const directPanelHidden = await shadow(demo, "root.querySelector('.lili-panel').hidden");
     check('mode direct : champ remplacé sans panneau', directPanelHidden);
 
-    // 10. Remplacement automatique (option)
+    // 11. Remplacement automatique (option)
     await options.evaluate((settings) => {
       return new Promise((resolve) => chrome.storage.local.set({ settings }, resolve));
     }, { ...SETTINGS, ui: { ...SETTINGS.ui, autoReplace: true } });
@@ -660,7 +711,7 @@ async function main() {
     check('remplacement auto : champ mis à jour', autoValue === TRANSLATION, autoValue);
     check('remplacement auto : panneau refermé', autoPanelHidden);
 
-    // 11. Site rules
+    // 12. Site rules
     await options.evaluate(
       (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
       { ...SETTINGS, siteRules: { disabled: ['127.0.0.1'], targets: {} } }
@@ -693,7 +744,7 @@ async function main() {
     );
     await clickUi(demo, 'close');
 
-    // 12. Chemin d'erreur (API injoignable)
+    // 13. Chemin d'erreur (API injoignable)
     await options.evaluate((settings) => {
       return new Promise((resolve) => chrome.storage.local.set({ settings }, resolve));
     }, (() => {

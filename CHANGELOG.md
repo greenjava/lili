@@ -21,12 +21,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Per-site rules to disable the floating toolbar and force a translation target per domain.
 - Lightweight Markdown rendering for results (headings, lists, emphasis, inline code, quotes), with
   an option to disable it.
+- Formatting preservation: rich selections are captured as Markdown, rendered after translation, and
+  inserted as formatted HTML into `contenteditable` fields.
 - SHA256 checksums are published with each release.
 - Release notes are generated from this changelog.
 
 ### Changed
 
 - GitHub Actions workflows now run on Node 24 runtimes.
+- Default shortcuts now use `Ctrl+Shift` combinations (`Y`, `U`, `H`, `1`), because Chrome refused to
+  assign `Alt+Shift+T` and `Alt+Shift+R`, and `Alt+Shift` is often the Linux layout switch.
+
+### Fixed
+
+- Chrome now assigns all four default keyboard shortcuts; they can still be customized in
+  `chrome://extensions/shortcuts`.
 
 ## [0.3.0] - 2026-11-24
 

@@ -188,7 +188,7 @@ globalThis.LILI_STYLES = `
 }
 
 .lili-text.is-markdown { white-space: normal; }
-.lili-text.is-markdown p { margin: 0 0 6px; }
+.lili-text.is-markdown p { margin: 0 0 6px; white-space: pre-wrap; }
 .lili-text.is-markdown p:last-child { margin-bottom: 0; }
 
 .lili-text.is-markdown h1,

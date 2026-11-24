@@ -26,6 +26,8 @@ configured API; there is no backend.
 - Build UI nodes with DOM APIs. Never assign dynamic values to `innerHTML`.
 - The Markdown renderer is node-based: it may create headings, lists, emphasis, code and quotes, but
   never interprets raw HTML.
+- Rich replacement in `contenteditable` serializes our own renderer output to HTML (`<strong>`,
+  `<ul>`, `<p>`…) and uses `insertHTML`; never pass model output as HTML.
 - Keep the result-panel UI inside its shadow root with `adoptedStyleSheets`.
 - Never log, persist or transmit API keys anywhere except `chrome.storage.local`.
 - Do not add telemetry, analytics or remote logging.
@@ -65,7 +67,9 @@ test/e2e/                Chrome harness, two fake providers, demo page
 2. It opens a port named `lili-stream` and sends `{ type: 'start', action, text, page, context }`.
 3. The background resolves the route for the action, builds the prompt, calls the provider with
    SSE/NDJSON or JSON, and posts `delta`, `status`, `meta`, `done` or `error` messages.
-4. The panel appends deltas; replacement uses the DOM references saved at capture time.
+4. The panel appends deltas; replacement uses the DOM references saved at capture time. Rich
+   selections are serialized to Markdown (`selectionMarkdown`), while the plain selection text is
+   kept for diffs and field replacement.
 5. Follow-ups send the current result with a `refine_*` action. The original selection is kept in the
    request so the refined text can still replace the field.
 
@@ -205,6 +209,9 @@ the options page. Set `E2E_ARTIFACTS=1` to write screenshots to `test/e2e/artifa
 - The e2e harness patches the copied manifest with dynamic mock origins; never add test hosts to the
   real manifest.
 - `scripts/build.mjs` needs the `zip` binary for `--zip`.
+- Chrome may leave a suggested command shortcut unassigned on conflict. Verify with
+  `chrome.commands.getAll()` (the e2e suite asserts four assigned shortcuts); do not use
+  `Alt+Shift` defaults on Linux, where it is often the layout switch.
 
 ## Definition of done
 

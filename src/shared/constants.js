@@ -5,14 +5,14 @@
     translate: {
       label: 'Traduire',
       short: 'Traduire',
-      hint: 'Traduire la sélection (Alt+Maj+T)',
+      hint: 'Traduire la sélection (Ctrl+Maj+Y)',
       icon: 'translate',
       editable: true,
     },
     rephrase: {
       label: 'Reformuler',
       short: 'Reformuler',
-      hint: 'Reformuler sans changer le sens (Alt+Maj+R)',
+      hint: 'Reformuler sans changer le sens (Ctrl+Maj+U)',
       icon: 'sparkles',
       editable: true,
     },
@@ -26,7 +26,7 @@
     summarize: {
       label: 'Résumer',
       short: 'Résumer',
-      hint: 'Résumer la sélection (Alt+Maj+D)',
+      hint: 'Résumer la sélection (Ctrl+Maj+H)',
       icon: 'list',
       editable: false,
     },
@@ -40,7 +40,7 @@
     summarize_page: {
       label: 'Résumer la page',
       short: 'Page',
-      hint: 'Résumer le contenu de la page (Alt+Maj+S)',
+      hint: 'Résumer le contenu de la page (Ctrl+Maj+1)',
       icon: 'page',
       editable: false,
     },
