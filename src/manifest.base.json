@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "Lili — traduire, reformuler, résumer",
+  "short_name": "Lili",
+  "version": "0.1.0",
+  "description": "Traduis, reformule et résume la sélection ou la page entière, avec le modèle d'IA de ton choix.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["storage", "contextMenus"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "host_permissions": [
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "http://localhost:11434/*",
+    "http://127.0.0.1:11434/*"
+  ],
+  "action": {
+    "default_title": "Lili — actions rapides",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["shared/constants.js", "content/styles.js", "content/content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "commands": {
+    "translate-selection": {
+      "suggested_key": { "default": "Alt+Shift+T" },
+      "description": "Traduire la sélection"
+    },
+    "rephrase-selection": {
+      "suggested_key": { "default": "Alt+Shift+R" },
+      "description": "Reformuler la sélection"
+    },
+    "summarize-selection": {
+      "suggested_key": { "default": "Alt+Shift+D" },
+      "description": "Résumer la sélection"
+    },
+    "summarize-page": {
+      "suggested_key": { "default": "Alt+Shift+S" },
+      "description": "Résumer la page"
+    }
+  }
+}

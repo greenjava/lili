@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Réglages — Lili</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">
+        <img src="../icons/icon-48.png" alt="" width="36" height="36" />
+        <div>
+          <h1>Lili</h1>
+          <p>Traduire, reformuler, résumer — sans quitter la page.</p>
+        </div>
+      </div>
+      <span class="version">v0.1.0</span>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Fournisseur</h2>
+        <p class="help">
+          Lili appelle directement l’API depuis le navigateur. Rien ne transite par un serveur
+          intermédiaire : ton texte part uniquement vers le fournisseur choisi.
+        </p>
+
+        <div class="field">
+          <label for="provider">Service utilisé</label>
+          <select id="provider">
+            <option value="openai">OpenAI ou compatible (Mistral, Groq, OpenRouter, vLLM…)</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="ollama">Ollama (local)</option>
+          </select>
+        </div>
+
+        <div class="provider" data-provider="openai">
+          <div class="field">
+            <label for="openai-baseUrl">URL de base</label>
+            <input id="openai-baseUrl" type="url" spellcheck="false" placeholder="https://api.openai.com/v1" />
+            <p class="hint">L’endpoint <code>/chat/completions</code> est ajouté automatiquement.</p>
+          </div>
+          <div class="field">
+            <label for="openai-apiKey">Clé API</label>
+            <div class="secret">
+              <input id="openai-apiKey" type="password" spellcheck="false" autocomplete="off" placeholder="sk-…" />
+              <button type="button" class="ghost" data-reveal="openai-apiKey">Afficher</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="openai-model">Modèle</label>
+            <input id="openai-model" type="text" spellcheck="false" placeholder="gpt-4o-mini" />
+          </div>
+        </div>
+
+        <div class="provider" data-provider="anthropic" hidden>
+          <div class="field">
+            <label for="anthropic-baseUrl">URL de base</label>
+            <input id="anthropic-baseUrl" type="url" spellcheck="false" placeholder="https://api.anthropic.com" />
+          </div>
+          <div class="field">
+            <label for="anthropic-apiKey">Clé API</label>
+            <div class="secret">
+              <input id="anthropic-apiKey" type="password" spellcheck="false" autocomplete="off" placeholder="sk-ant-…" />
+              <button type="button" class="ghost" data-reveal="anthropic-apiKey">Afficher</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="anthropic-model">Modèle</label>
+            <input id="anthropic-model" type="text" spellcheck="false" placeholder="claude-3-5-haiku-latest" />
+          </div>
+        </div>
+
+        <div class="provider" data-provider="ollama" hidden>
+          <div class="field">
+            <label for="ollama-baseUrl">URL de base</label>
+            <input id="ollama-baseUrl" type="url" spellcheck="false" placeholder="http://localhost:11434" />
+            <p class="hint">
+              Pour autoriser l’extension, lance Ollama avec
+              <code>OLLAMA_ORIGINS="*"</code> (ou l’origine de l’extension).
+            </p>
+          </div>
+          <div class="field">
+            <label for="ollama-model">Modèle</label>
+            <input id="ollama-model" type="text" spellcheck="false" placeholder="llama3.1:8b" />
+            <p class="hint">Le modèle doit être téléchargé : <code>ollama pull llama3.1:8b</code>.</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <button type="button" id="test" class="secondary">Tester la connexion</button>
+          <span id="test-result" class="result" hidden></span>
+        </div>
+        <p class="hint" id="permission-hint">
+          À l’enregistrement, le navigateur demandera l’autorisation d’accéder à cet hôte. C’est
+          nécessaire pour contourner les restrictions CORS.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Langues</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="translateTarget">Traduction</label>
+            <select id="translateTarget">
+              <option value="auto">FR ↔ EN automatique</option>
+              <option value="fr">Toujours vers le français</option>
+              <option value="en">Toujours vers l’anglais</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="output">Langue des résumés</label>
+            <select id="output">
+              <option value="fr">En français</option>
+              <option value="en">En anglais</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Style</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="tone">Ton de la reformulation</label>
+            <select id="tone">
+              <option value="neutre">Neutre</option>
+              <option value="professionnel">Professionnel</option>
+              <option value="decontracte">Décontracté</option>
+              <option value="academique">Académique</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="length">Longueur du résumé</label>
+            <select id="length">
+              <option value="court">Court</option>
+              <option value="moyen">Moyen</option>
+              <option value="detaille">Détaillé</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Interface</h2>
+
+        <label class="check">
+          <input type="checkbox" id="toolbar" />
+          <span>Afficher la barre flottante près de la sélection</span>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="autoReplace" />
+          <span>Remplacer automatiquement le texte des champs éditables (Ctrl+Z pour annuler)</span>
+        </label>
+
+        <fieldset class="field">
+          <legend>Actions de la barre flottante</legend>
+          <div id="actions" class="checks"></div>
+        </fieldset>
+      </section>
+
+      <section class="card">
+        <h2>Limites</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="maxSelectionChars">Sélection maximale (caractères)</label>
+            <input id="maxSelectionChars" type="number" min="500" step="500" />
+          </div>
+          <div class="field">
+            <label for="maxPageChars">Page maximale analysée (caractères)</label>
+            <input id="maxPageChars" type="number" min="10000" step="10000" />
+          </div>
+        </div>
+        <p class="hint">
+          Au-delà de ces limites, le texte est tronqué (résumé de page) ou refusé (sélection).
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Raccourcis</h2>
+        <dl class="keys">
+          <div><dt>Alt + Maj + T</dt><dd>Traduire la sélection</dd></div>
+          <div><dt>Alt + Maj + R</dt><dd>Reformuler la sélection</dd></div>
+          <div><dt>Alt + Maj + D</dt><dd>Résumer la sélection</dd></div>
+          <div><dt>Alt + Maj + S</dt><dd>Résumer la page</dd></div>
+        </dl>
+        <p class="hint">
+          Personnalisables dans <code>chrome://extensions/shortcuts</code> ou
+          <code>about:addons</code> → roue dentée → « Gérer les raccourcis ».
+        </p>
+      </section>
+    </main>
+
+    <footer class="bar">
+      <button type="button" id="save" class="primary">Enregistrer</button>
+      <button type="button" id="reset" class="secondary">Réinitialiser</button>
+      <span id="status" class="status" role="status"></span>
+    </footer>
+
+    <script src="../shared/constants.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

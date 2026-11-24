@@ -1,0 +1,16 @@
+{
+  "name": "lili",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Extension navigateur : traduire, reformuler et résumer la sélection ou la page entière.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:zip": "node scripts/build.mjs --zip",
+    "icons": "python3 scripts/make-icons.py",
+    "check": "node scripts/check.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

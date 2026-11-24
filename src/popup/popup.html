@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Lili</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="head">
+      <img src="../icons/icon-48.png" alt="" width="30" height="30" />
+      <div class="titles">
+        <strong>Lili</strong>
+        <span id="provider">…</span>
+      </div>
+      <button type="button" id="options" class="link" title="Réglages">Réglages</button>
+    </header>
+
+    <main>
+      <section>
+        <div class="section-head">
+          <span>Sélection</span>
+          <span id="selection-count" class="count"></span>
+        </div>
+        <p id="selection-preview" class="preview">Aucune sélection détectée.</p>
+        <div id="selection-actions" class="actions"></div>
+      </section>
+
+      <section>
+        <label class="section-head" for="text">Texte libre</label>
+        <textarea id="text" rows="3" placeholder="Colle un texte à traduire, reformuler ou résumer…"></textarea>
+        <div id="text-actions" class="actions"></div>
+      </section>
+
+      <section>
+        <button type="button" id="page-action" class="wide">
+          Résumer cette page
+          <span class="kbd">Alt+Maj+S</span>
+        </button>
+      </section>
+
+      <p id="notice" class="notice" hidden></p>
+    </main>
+
+    <footer class="foot">
+      <span>Alt+Maj+T traduit la sélection</span>
+    </footer>
+
+    <script src="../shared/constants.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

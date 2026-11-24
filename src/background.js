@@ -1,0 +1,1187 @@
+// Service worker (Chrome) / event page (Firefox).
+// No imports: both browsers load this file as is.
+
+'use strict';
+
+const api = globalThis.browser || globalThis.chrome;
+
+const PORT_NAME = 'lili-stream';
+const TIMEOUT_MS = 90000;
+const TEST_TIMEOUT_MS = 20000;
+
+const LANG_NAMES = { fr: 'français', en: 'anglais' };
+
+const DEFAULT_SETTINGS = {
+  provider: 'openai',
+  providers: {
+    openai: {
+      baseUrl: 'https://api.openai.com/v1',
+      apiKey: '',
+      model: 'gpt-4o-mini',
+    },
+    anthropic: {
+      baseUrl: 'https://api.anthropic.com',
+      apiKey: '',
+      model: 'claude-3-5-haiku-latest',
+    },
+    ollama: {
+      baseUrl: 'http://localhost:11434',
+      apiKey: '',
+      model: 'llama3.1:8b',
+    },
+  },
+  language: { translateTarget: 'auto', output: 'fr' },
+  rephrase: { tone: 'neutre' },
+  summary: { length: 'moyen' },
+  limits: {
+    maxPageChars: 120000,
+    maxSelectionChars: 20000,
+    chunkChars: 14000,
+    maxChunks: 8,
+  },
+  ui: {
+    toolbar: true,
+    pageAction: true,
+    autoReplace: false,
+    actions: ['translate', 'rephrase', 'rephrase_translate', 'summarize', 'fix'],
+  },
+};
+
+const PROVIDER_LABELS = {
+  openai: 'OpenAI / compatible',
+  anthropic: 'Anthropic',
+  ollama: 'Ollama',
+};
+
+// --------------------------------------------------------------------- utils
+
+function deepMerge(base, patch) {
+  if (!patch || typeof patch !== 'object') return base;
+  const out = Array.isArray(base) ? base.slice() : { ...base };
+  for (const [key, value] of Object.entries(patch)) {
+    const current = out[key];
+    if (
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      current &&
+      typeof current === 'object' &&
+      !Array.isArray(current)
+    ) {
+      out[key] = deepMerge(current, value);
+    } else if (value !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+function endpoint(baseUrl, path) {
+  const base = String(baseUrl || '').trim().replace(/\/+$/, '');
+  if (!base) throw new Error('URL de base manquante dans les réglages.');
+  if (path.startsWith('/v1/') && /\/v1$/.test(base)) return base + path.slice(3);
+  return base + path;
+}
+
+function providerLabel(provider) {
+  return PROVIDER_LABELS[provider] || provider;
+}
+
+function chunkText(text, size) {
+  const chunks = [];
+  let rest = String(text || '');
+  const limit = Math.max(1000, Number(size) || 14000);
+
+  while (rest.length > limit) {
+    let cut = rest.lastIndexOf('\n\n', limit);
+    if (cut < limit * 0.5) cut = rest.lastIndexOf('. ', limit);
+    if (cut < limit * 0.5) cut = rest.lastIndexOf('\n', limit);
+    if (cut < limit * 0.5) cut = rest.lastIndexOf(' ', limit);
+    if (cut <= 0) cut = limit;
+    chunks.push(rest.slice(0, cut).trim());
+    rest = rest.slice(cut).trim();
+  }
+  if (rest) chunks.push(rest);
+  return chunks.filter(Boolean);
+}
+
+function abortError() {
+  const error = new Error('Requête interrompue.');
+  error.name = 'AbortError';
+  return error;
+}
+
+// ------------------------------------------------------------------- settings
+
+async function getSettings() {
+  const stored = await api.storage.local.get('settings');
+  return deepMerge(DEFAULT_SETTINGS, (stored && stored.settings) || {});
+}
+
+async function saveSettings(incoming) {
+  const current = await getSettings();
+  const next = deepMerge(current, incoming || {});
+  await api.storage.local.set({ settings: next });
+  return next;
+}
+
+// --------------------------------------------------------------- language
+
+const FR_WORDS = [
+  'le', 'la', 'les', 'des', 'une', 'est', 'et', 'pour', 'que', 'qui', 'dans', 'avec',
+  'sur', 'pas', 'plus', 'vous', 'nous', 'je', 'il', 'elle', 'ce', 'cette', 'sont',
+  'être', 'avoir', 'du', 'au', 'aux', 'mais', 'comme', 'tout', 'fait', 'peut', 'dont',
+  'aussi', 'leur', 'leurs', 'entre', 'sans', 'ses', 'son', 'sa', 'ces', 'ont', 'été',
+];
+
+const EN_WORDS = [
+  'the', 'and', 'of', 'to', 'in', 'is', 'are', 'for', 'with', 'that', 'this', 'you',
+  'it', 'on', 'as', 'be', 'have', 'was', 'were', 'from', 'at', 'by', 'not', 'or',
+  'but', 'they', 'we', 'will', 'can', 'has', 'had', 'their', 'there', 'which', 'when',
+  'what', 'how', 'its', 'our', 'your', 'these', 'those', 'been', 'would', 'should',
+];
+
+function countOccurrences(haystack, needle) {
+  let count = 0;
+  let index = haystack.indexOf(needle);
+  while (index !== -1) {
+    count++;
+    index = haystack.indexOf(needle, index + needle.length);
+  }
+  return count;
+}
+
+function detectLanguage(input) {
+  const raw = String(input || '').slice(0, 4000);
+  if (!raw.trim()) return 'unknown';
+
+  const normalized =
+    ' ' + raw.toLowerCase().replace(/[^a-zà-ÿœæ'’]+/gi, ' ').replace(/\s+/g, ' ') + ' ';
+
+  let fr = 0;
+  let en = 0;
+  for (const word of FR_WORDS) fr += countOccurrences(normalized, ' ' + word + ' ');
+  for (const word of EN_WORDS) en += countOccurrences(normalized, ' ' + word + ' ');
+
+  const accents = (raw.match(/[àâçéèêëîïôùûüÿœæ]/gi) || []).length;
+  if (accents) fr += Math.min(8, accents * 0.7);
+
+  const words = normalized.trim().split(' ').filter(Boolean).length;
+  if (words < 4) return accents ? 'fr' : 'unknown';
+
+  if (fr > en * 1.3) return 'fr';
+  if (en > fr * 1.3) return 'en';
+  return 'unknown';
+}
+
+function titleCaseFirst(text) {
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+function resolveLanguages(action, text, settings) {
+  const output = settings.language.output === 'en' ? 'en' : 'fr';
+  const detected = detectLanguage(text);
+
+  if (action === 'summarize' || action === 'fix') {
+    return { output, outputName: LANG_NAMES[output], detected };
+  }
+
+  const mode = settings.language.translateTarget;
+  const target = mode === 'fr' || mode === 'en' ? mode : detected === 'fr' ? 'en' : 'fr';
+  const source = detected === 'unknown' ? target : detected;
+
+  return {
+    source,
+    target,
+    sourceName: LANG_NAMES[source] || LANG_NAMES[target],
+    targetName: LANG_NAMES[target],
+    output,
+    outputName: LANG_NAMES[output],
+    sameLanguage: source === target,
+    detected,
+    label: source !== target ? source.toUpperCase() + ' → ' + target.toUpperCase() : '',
+  };
+}
+
+// ------------------------------------------------------------------ prompts
+
+const TONES = {
+  neutre: 'neutre et naturel',
+  professionnel: 'professionnel, sobre et précis',
+  decontracte: 'décontracté mais précis',
+  academique: 'académique et rigoureux',
+};
+
+function summaryRule(length) {
+  switch (length) {
+    case 'court':
+      return {
+        rule: 'très court (2 à 3 phrases, ou 3 puces maximum)',
+        format: '2 à 3 phrases, ou 3 puces si le texte s’y prête.',
+        tokens: 500,
+      };
+    case 'detaille':
+      return {
+        rule:
+          'une synthèse détaillée : une phrase de contexte, puis 4 à 7 puces avec les points clés, puis une ligne « À retenir : »',
+        format:
+          'une phrase de contexte, une liste de 4 à 7 puces, puis une ligne « À retenir : … ».',
+        tokens: 1600,
+      };
+    default:
+      return {
+        rule: 'un paragraphe de 4 à 6 phrases, dense et fluide',
+        format: 'un paragraphe de 4 à 6 phrases. Pas de liste.',
+        tokens: 900,
+      };
+  }
+}
+
+function buildMessages(action, payload) {
+  const { text, settings, languages } = payload;
+
+  if (action === 'translate') {
+    const targetName = languages.targetName;
+    const system = [
+      'Tu es un traducteur professionnel. Traduis le texte fourni en ' + targetName + '.',
+      '',
+      'Règles :',
+      '- Conserve le sens, le ton, le registre et le niveau de détail.',
+      '- Conserve la mise en forme : paragraphes, retours à la ligne, listes, ponctuation.',
+      '- Ne traduis pas les noms propres, marques, URL, chemins de fichiers ni le code.',
+      '- N’ajoute aucun commentaire, aucune note, aucun guillemet autour du résultat.',
+      languages.sameLanguage
+        ? '- Le texte semble déjà dans cette langue : corrige-le et rends-le plus naturel sans en changer le sens.'
+        : '- Si un passage est déjà dans la langue cible, conserve-le tel quel.',
+      '',
+      'Réponds uniquement avec la traduction.',
+    ].join('\n');
+
+    return {
+      messages: [systemMessage(system), userMessage(text)],
+      maxTokens: 4000,
+      temperature: 0.2,
+    };
+  }
+
+  if (action === 'rephrase') {
+    const tone = TONES[settings.rephrase.tone] || TONES.neutre;
+    const system = [
+      'Tu es un éditeur exigeant. Reformule le texte fourni, dans la même langue que lui.',
+      '',
+      'Règles :',
+      '- Garde exactement le même sens, les mêmes faits, chiffres et nuances.',
+      '- N’ajoute aucune information et n’en supprime aucune.',
+      '- Améliore la clarté, la fluidité et la concision ; supprime lourdeurs et répétitions.',
+      '- Conserve la mise en forme (paragraphes, listes) et le niveau de détail.',
+      '- Ton attendu : ' + tone + '.',
+      '',
+      'Réponds uniquement avec le texte reformulé, sans préambule ni commentaire.',
+    ].join('\n');
+
+    return {
+      messages: [systemMessage(system), userMessage(text)],
+      maxTokens: 4000,
+      temperature: 0.4,
+    };
+  }
+
+  if (action === 'rephrase_translate') {
+    const system = [
+      'Reformule puis traduis le texte fourni.',
+      '',
+      '1. Reformule-le en ' + languages.sourceName + ' pour le rendre plus clair et plus fluide, sans changer le sens.',
+      '2. Traduis la version reformulée en ' + languages.targetName + '.',
+      '',
+      'Contraintes : conserve les faits, les chiffres et la mise en forme ; n’ajoute rien ; ne commente pas.',
+      'Réponds uniquement avec la version finale en ' + languages.targetName + '.',
+    ].join('\n');
+
+    return {
+      messages: [systemMessage(system), userMessage(text)],
+      maxTokens: 4000,
+      temperature: 0.35,
+    };
+  }
+
+  if (action === 'fix') {
+    const system = [
+      'Corrige le texte fourni dans sa langue d’origine : orthographe, grammaire, accords, ponctuation et typographie.',
+      '',
+      'Règles :',
+      '- Ne change ni le sens, ni le style, ni la structure.',
+      '- Ne reformule pas inutilement : corrige seulement ce qui doit l’être.',
+      '- Conserve la mise en forme.',
+      '',
+      'Réponds uniquement avec le texte corrigé.',
+    ].join('\n');
+
+    return {
+      messages: [systemMessage(system), userMessage(text)],
+      maxTokens: 4000,
+      temperature: 0.1,
+    };
+  }
+
+  if (action === 'summarize') {
+    const length = summaryRule(settings.summary.length);
+    const system = [
+      'Tu résumes un texte pour un lecteur pressé.',
+      'Langue du résumé : ' + languages.outputName + '. Longueur : ' + length.rule + '.',
+      '',
+      'Règles :',
+      '- Conserve les idées principales, les chiffres, les noms et les conclusions.',
+      '- Supprime les exemples secondaires, les répétitions et les formules.',
+      '- N’invente rien, n’ajoute aucun avis personnel.',
+      '- Format attendu : ' + length.format,
+      '',
+      'Réponds uniquement avec le résumé.',
+    ].join('\n');
+
+    return {
+      messages: [systemMessage(system), userMessage(text)],
+      maxTokens: length.tokens,
+      temperature: 0.25,
+    };
+  }
+
+  throw new Error('Action non prise en charge : ' + action);
+}
+
+function systemMessage(content) {
+  return { role: 'system', content };
+}
+
+function userMessage(content) {
+  return { role: 'user', content };
+}
+
+function pageSummarizeMessages(page, content, lang, lengthSetting) {
+  const length = summaryRule(lengthSetting);
+  const title = page.title ? '« ' + page.title + ' »' : 'cette page';
+
+  const system = [
+    'Tu résumes ' + title + ' pour un lecteur pressé.',
+    'Langue du résumé : ' + LANG_NAMES[lang] + '. Longueur : ' + length.rule + '.',
+    '',
+    'Règles :',
+    '- Conserve les idées principales, les chiffres, les noms propres et les conclusions.',
+    '- Ignore les menus, publicités, commentaires et contenus de navigation.',
+    '- N’invente rien. Si une information n’est pas dans le texte, ne la mentionne pas.',
+    '- Commence directement par le résumé, sans formule du type « Cet article… ».',
+    '- Format attendu : ' + length.format,
+    '',
+    'Réponds uniquement avec le résumé.',
+  ].join('\n');
+
+  return {
+    messages: [
+      systemMessage(system),
+      userMessage('Titre : ' + (page.title || '(sans titre)') + '\n\nContenu :\n' + content),
+    ],
+    maxTokens: length.tokens,
+    temperature: 0.25,
+  };
+}
+
+function pageChunkMessages(page, chunk, index, total) {
+  const system = [
+    'Tu prépares des notes de lecture factuelles à partir d’un extrait de page web.',
+    '',
+    'Règles :',
+    '- Extrais uniquement les informations importantes : idées, faits, chiffres, noms, conclusions.',
+    '- 3 à 6 puces maximum, chacune courte et autoportante.',
+    '- Aucune introduction, aucun commentaire, aucune conclusion.',
+    '- Écris dans la langue de l’extrait.',
+  ].join('\n');
+
+  return {
+    messages: [
+      systemMessage(system),
+      userMessage(
+        'Page : ' + (page.title || '(sans titre)') +
+          '\nExtrait ' + index + '/' + total + ' :\n' + chunk
+      ),
+    ],
+    maxTokens: 600,
+    temperature: 0.2,
+  };
+}
+
+function pageReduceMessages(page, notes, lang, lengthSetting, truncated) {
+  const length = summaryRule(lengthSetting);
+
+  const system = [
+    'Tu rédiges le résumé final d’une page web à partir de notes partielles.',
+    'Langue du résumé : ' + LANG_NAMES[lang] + '. Longueur : ' + length.rule + '.',
+    '',
+    'Règles :',
+    '- Fusionne les notes en un résumé cohérent : supprime les redites, garde les faits, chiffres et noms.',
+    '- N’ajoute aucune information absente des notes.',
+    '- Commence directement par le résumé, sans formule d’introduction.',
+    '- Format attendu : ' + length.format,
+    truncated ? '- La page était longue : le résumé porte sur ses principales sections.' : '',
+    '',
+    'Réponds uniquement avec le résumé.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  return {
+    messages: [
+      systemMessage(system),
+      userMessage(
+        'Page : ' + (page.title || '(sans titre)') + '\n\nNotes :\n' + notes.join('\n\n')
+      ),
+    ],
+    maxTokens: length.tokens,
+    temperature: 0.25,
+  };
+}
+
+// ---------------------------------------------------------------- transport
+
+async function* readLines(response) {
+  if (!response.body) return;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) {
+        buffer += decoder.decode();
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+
+      let index;
+      while ((index = buffer.indexOf('\n')) >= 0) {
+        let line = buffer.slice(0, index);
+        buffer = buffer.slice(index + 1);
+        if (line.endsWith('\r')) line = line.slice(0, -1);
+        yield line;
+      }
+    }
+
+    if (buffer) {
+      yield buffer.endsWith('\r') ? buffer.slice(0, -1) : buffer;
+    }
+  } finally {
+    try {
+      reader.releaseLock();
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+async function streamSSE(response, handler) {
+  let data = [];
+
+  const flush = () => {
+    if (!data.length) return;
+    const payload = data.join('\n');
+    data = [];
+    handler(payload);
+  };
+
+  for await (const line of readLines(response)) {
+    if (!line) {
+      flush();
+      continue;
+    }
+    if (line.startsWith(':')) continue;
+    if (line.startsWith('event:') || line.startsWith('id:') || line.startsWith('retry:')) continue;
+    if (line.startsWith('data:')) {
+      let chunk = line.slice(5);
+      if (chunk.startsWith(' ')) chunk = chunk.slice(1);
+      data.push(chunk);
+    }
+  }
+  flush();
+}
+
+async function streamNDJSON(response, handler) {
+  for await (const line of readLines(response)) {
+    if (!line.trim()) continue;
+    handler(line);
+  }
+}
+
+function isEventStream(response) {
+  const type = (response.headers.get('content-type') || '').toLowerCase();
+  return type.includes('text/event-stream');
+}
+
+function extractErrorMessage(body) {
+  if (!body) return '';
+  try {
+    const data = JSON.parse(body);
+    const error = data.error;
+    if (typeof error === 'string') return error;
+    if (error && error.message) return error.message;
+    if (data.message) return data.message;
+    if (data.detail) return typeof data.detail === 'string' ? data.detail : '';
+  } catch {
+    /* non-JSON body */
+  }
+  return body.replace(/\s+/g, ' ').slice(0, 300);
+}
+
+async function requestOrThrow(url, init, label) {
+  let response;
+  try {
+    response = await fetch(url, init);
+  } catch (error) {
+    if (error && error.name === 'AbortError') throw error;
+    throw new Error(
+      'Impossible de joindre ' +
+        label +
+        '. Vérifie l’URL de base, ta connexion, et l’autorisation d’accès à cet hôte (bouton « Enregistrer » dans les réglages).'
+    );
+  }
+
+  if (!response.ok) {
+    let body = '';
+    try {
+      body = await response.text();
+    } catch {
+      /* ignore */
+    }
+    const detail = extractErrorMessage(body);
+    const suffix = detail ? '\n\nDétail : ' + detail : '';
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error('Accès refusé (' + response.status + '). Vérifie la clé API dans les réglages.' + suffix);
+    }
+    if (response.status === 404) {
+      throw new Error(
+        'Endpoint ou modèle introuvable (404). Vérifie l’URL de base et le nom du modèle.' + suffix
+      );
+    }
+    if (response.status === 429) {
+      throw new Error('Quota ou limite de débit atteint (429). Réessaie dans un instant.' + suffix);
+    }
+    throw new Error('Erreur du service (' + response.status + ').' + suffix);
+  }
+
+  return response;
+}
+
+// ---------------------------------------------------------------- adapters
+
+async function callModel(options) {
+  if (options.provider === 'anthropic') return callAnthropic(options);
+  if (options.provider === 'ollama') return callOllama(options);
+  return callOpenAI(options);
+}
+
+async function callOpenAI({ config, messages, maxTokens, temperature, stream, onDelta, signal, touch }) {
+  const url = endpoint(config.baseUrl, '/chat/completions');
+
+  const body = {
+    model: config.model,
+    messages,
+    temperature: typeof temperature === 'number' ? temperature : 0.3,
+    max_tokens: maxTokens || 2000,
+    stream: !!stream,
+  };
+
+  const response = await requestOrThrow(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: stream ? 'text/event-stream' : 'application/json',
+        Authorization: 'Bearer ' + (config.apiKey || ''),
+      },
+      body: JSON.stringify(body),
+      signal,
+    },
+    providerLabel('openai')
+  );
+
+  if (!stream || !isEventStream(response)) {
+    const data = await response.json().catch(() => ({}));
+    const message = data && data.choices && data.choices[0] && data.choices[0].message;
+    const text = message && typeof message.content === 'string' ? message.content : '';
+    if (!text.trim()) throw new Error('Réponse vide ou inattendue du fournisseur.');
+    if (onDelta) onDelta(text);
+    return text;
+  }
+
+  let result = '';
+  await streamSSE(response, (payload) => {
+    if (payload === '[DONE]') return;
+    let json;
+    try {
+      json = JSON.parse(payload);
+    } catch {
+      return;
+    }
+    if (json.error) throw new Error(json.error.message || 'Erreur renvoyée par le fournisseur.');
+    const choice = json.choices && json.choices[0];
+    const delta = choice && (choice.delta || choice.message);
+    const text = delta && typeof delta.content === 'string' ? delta.content : '';
+    if (text) {
+      result += text;
+      if (onDelta) onDelta(text);
+      if (touch) touch();
+    }
+  });
+
+  if (!result.trim()) throw new Error('Le modèle a renvoyé une réponse vide.');
+  return result;
+}
+
+async function callAnthropic({ config, messages, maxTokens, temperature, stream, onDelta, signal, touch }) {
+  const url = endpoint(config.baseUrl, '/v1/messages');
+
+  const system = messages
+    .filter((m) => m.role === 'system')
+    .map((m) => m.content)
+    .join('\n\n');
+  const conversation = messages.filter((m) => m.role !== 'system');
+
+  const body = {
+    model: config.model,
+    max_tokens: maxTokens || 2000,
+    temperature: typeof temperature === 'number' ? temperature : 0.3,
+    messages: conversation,
+    stream: !!stream,
+  };
+  if (system) body.system = system;
+
+  const response = await requestOrThrow(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': config.apiKey || '',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify(body),
+      signal,
+    },
+    providerLabel('anthropic')
+  );
+
+  if (!stream || !isEventStream(response)) {
+    const data = await response.json().catch(() => ({}));
+    const blocks = Array.isArray(data.content) ? data.content : [];
+    const text = blocks
+      .filter((block) => block.type === 'text')
+      .map((block) => block.text)
+      .join('');
+    if (!text.trim()) throw new Error('Réponse vide ou inattendue d’Anthropic.');
+    if (onDelta) onDelta(text);
+    return text;
+  }
+
+  let result = '';
+  await streamSSE(response, (payload) => {
+    let json;
+    try {
+      json = JSON.parse(payload);
+    } catch {
+      return;
+    }
+    if (json.type === 'error') {
+      throw new Error((json.error && json.error.message) || 'Erreur renvoyée par Anthropic.');
+    }
+    if (json.type === 'content_block_delta' && json.delta && json.delta.type === 'text_delta') {
+      const text = json.delta.text || '';
+      if (text) {
+        result += text;
+        if (onDelta) onDelta(text);
+        if (touch) touch();
+      }
+    }
+  });
+
+  if (!result.trim()) throw new Error('Le modèle a renvoyé une réponse vide.');
+  return result;
+}
+
+async function callOllama({ config, messages, maxTokens, temperature, stream, onDelta, signal, touch }) {
+  const url = endpoint(config.baseUrl, '/api/chat');
+
+  const body = {
+    model: config.model,
+    messages,
+    stream: !!stream,
+    options: {
+      temperature: typeof temperature === 'number' ? temperature : 0.3,
+      num_predict: maxTokens || 2000,
+    },
+  };
+
+  const response = await requestOrThrow(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: stream ? 'application/x-ndjson' : 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal,
+    },
+    providerLabel('ollama')
+  );
+
+  if (!stream) {
+    const data = await response.json().catch(() => ({}));
+    const text = data && data.message && typeof data.message.content === 'string' ? data.message.content : '';
+    if (!text.trim()) throw new Error('Réponse vide ou inattendue d’Ollama (modèle chargé ?).');
+    if (onDelta) onDelta(text);
+    return text;
+  }
+
+  let result = '';
+  await streamNDJSON(response, (line) => {
+    let json;
+    try {
+      json = JSON.parse(line);
+    } catch {
+      return;
+    }
+    if (json.error) throw new Error(json.error);
+    const text = json.message && typeof json.message.content === 'string' ? json.message.content : '';
+    if (text) {
+      result += text;
+      if (onDelta) onDelta(text);
+      if (touch) touch();
+    }
+  });
+
+  if (!result.trim()) throw new Error('Le modèle a renvoyé une réponse vide.');
+  return result;
+}
+
+// --------------------------------------------------------------- page summary
+
+async function summarizePageJob({ page, settings, post, signal, touch }) {
+  const content = String((page && page.text) || '').trim();
+  if (content.length < 150) {
+    throw new Error('Cette page ne contient pas assez de texte à résumer.');
+  }
+
+  const provider = settings.provider;
+  const config = settings.providers[provider] || {};
+  const lang = settings.language.output === 'en' ? 'en' : 'fr';
+  const base = {
+    provider,
+    config,
+    maxTokens: 0,
+    temperature: 0.25,
+    stream: true,
+    signal,
+    touch,
+  };
+
+  const clipped = content.slice(0, settings.limits.maxPageChars);
+  const chunks = chunkText(clipped, settings.limits.chunkChars);
+  const maxChunks = Math.max(1, settings.limits.maxChunks);
+  const used = chunks.slice(0, maxChunks);
+
+  post({
+    type: 'meta',
+    text: titleCaseFirst(LANG_NAMES[lang]) + ' · ' + used.length + ' section' + (used.length > 1 ? 's' : ''),
+  });
+
+  const done = () => post({ type: 'done', provider, model: config.model });
+
+  if (used.length <= 1) {
+    const prepared = pageSummarizeMessages(page, clipped, lang, settings.summary.length);
+    await callModel({ ...base, ...prepared, onDelta: (text) => post({ type: 'delta', text }) });
+    done();
+    return;
+  }
+
+  const notes = [];
+  for (let index = 0; index < used.length; index++) {
+    if (signal.aborted) throw abortError();
+    post({ type: 'status', text: 'Lecture de la page… section ' + (index + 1) + '/' + used.length });
+    touch();
+
+    const prepared = pageChunkMessages(page, used[index], index + 1, used.length);
+    notes.push(
+      await callModel({
+        ...base,
+        ...prepared,
+        stream: false,
+        maxTokens: 600,
+        temperature: 0.2,
+      })
+    );
+  }
+
+  if (signal.aborted) throw abortError();
+  post({ type: 'status', text: 'Synthèse du résumé…' });
+  touch();
+
+  const prepared = pageReduceMessages(
+    page,
+    notes,
+    lang,
+    settings.summary.length,
+    clipped.length > maxChunks * settings.limits.chunkChars
+  );
+  await callModel({ ...base, ...prepared, onDelta: (text) => post({ type: 'delta', text }) });
+  done();
+}
+
+// ---------------------------------------------------------------------- jobs
+
+function explainError(error, timedOut) {
+  if (timedOut) {
+    return 'Délai dépassé (90 s sans réponse). Essaie un texte plus court, un modèle plus rapide, ou vérifie la connexion.';
+  }
+  const message = (error && error.message) || String(error || 'Erreur inconnue.');
+  if (/Failed to fetch|NetworkError|Load failed|Network request failed/i.test(message)) {
+    return 'Impossible de joindre l’API. Vérifie l’URL de base et l’autorisation d’accès à cet hôte dans les réglages.';
+  }
+  return message;
+}
+
+async function runJob({ port, message, post, signal, touch, isTimedOut }) {
+  const settings = await getSettings();
+  const action = String(message.action || '');
+  const known = ['translate', 'rephrase', 'rephrase_translate', 'summarize', 'fix', 'summarize_page'];
+  if (!known.includes(action)) throw new Error('Action inconnue : ' + action);
+
+  const provider = settings.provider;
+  const config = settings.providers[provider] || {};
+
+  if (!config.model) {
+    throw new Error('Aucun modèle configuré. Ouvre les réglages de Lili pour choisir un fournisseur et un modèle.');
+  }
+  if (provider !== 'ollama' && !config.apiKey) {
+    throw new Error(
+      'Clé API manquante pour ' + providerLabel(provider) + '. Ouvre les réglages de Lili pour la renseigner.'
+    );
+  }
+
+  if (action === 'summarize_page') {
+    await summarizePageJob({ page: message.page || {}, settings, post, signal, touch });
+    return;
+  }
+
+  const text = String(message.text || '').trim();
+  if (!text) throw new Error('Aucun texte à traiter.');
+
+  const maxChars = settings.limits.maxSelectionChars;
+  if (text.length > maxChars) {
+    throw new Error(
+      'Sélection trop longue : ' +
+        text.length +
+        ' caractères (maximum ' +
+        maxChars +
+        '). Sélectionne un passage plus court, ou utilise « Résumer la page ».'
+    );
+  }
+
+  const languages = resolveLanguages(action, text, settings);
+
+  if (languages.label) post({ type: 'meta', text: languages.label });
+  else if (action === 'summarize') {
+    post({ type: 'meta', text: titleCaseFirst(languages.outputName) });
+  }
+
+  const prepared = buildMessages(action, { text, settings, languages });
+
+  const result = await callModel({
+    provider,
+    config,
+    messages: prepared.messages,
+    maxTokens: prepared.maxTokens,
+    temperature: prepared.temperature,
+    stream: true,
+    signal,
+    touch,
+    onDelta: (delta) => post({ type: 'delta', text: delta }),
+  });
+
+  if (isTimedOut()) throw new Error('Délai dépassé.');
+
+  post({ type: 'done', provider, model: config.model, chars: result.length });
+}
+
+async function testProvider(provider, overrides) {
+  const settings = await getSettings();
+  const config = { ...(settings.providers[provider] || {}), ...(overrides || {}) };
+
+  if (!config.model) throw new Error('Renseigne un nom de modèle.');
+  if (provider !== 'ollama' && !config.apiKey) throw new Error('Renseigne une clé API.');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
+  const started = Date.now();
+
+  try {
+    const reply = await callModel({
+      provider,
+      config,
+      messages: [
+        systemMessage('Tu es un test de connexion. Réponds uniquement par : OK'),
+        userMessage('Réponds uniquement par : OK'),
+      ],
+      maxTokens: 16,
+      temperature: 0,
+      stream: false,
+      signal: controller.signal,
+      onDelta: null,
+    });
+    return { ok: true, ms: Date.now() - started, text: String(reply).trim().slice(0, 120) };
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error('Pas de réponse en 20 s. Vérifie l’URL et que le service tourne.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ------------------------------------------------------------------ menus
+
+const MENUS = [
+  { id: 'lili-translate', title: 'Traduire la sélection', contexts: ['selection'] },
+  { id: 'lili-rephrase', title: 'Reformuler la sélection', contexts: ['selection'] },
+  { id: 'lili-rephrase-translate', title: 'Reformuler puis traduire', contexts: ['selection'] },
+  { id: 'lili-summarize', title: 'Résumer la sélection', contexts: ['selection'] },
+  { id: 'lili-fix', title: 'Corriger la sélection', contexts: ['selection'] },
+  { id: 'lili-summarize-page', title: 'Résumer cette page', contexts: ['page', 'frame'] },
+  { id: 'lili-options', title: 'Réglages de Lili…', contexts: ['action'] },
+];
+
+function createMenus() {
+  for (const item of MENUS) {
+    try {
+      api.contextMenus.create(item);
+    } catch {
+      /* already created */
+    }
+  }
+}
+
+function resetMenus() {
+  try {
+    const pending = api.contextMenus.removeAll();
+    if (pending && typeof pending.then === 'function') {
+      pending.then(createMenus).catch(createMenus);
+    } else {
+      setTimeout(createMenus, 0);
+    }
+  } catch {
+    createMenus();
+  }
+}
+
+api.runtime.onInstalled.addListener((details) => {
+  resetMenus();
+  if (details && details.reason === 'install') {
+    try {
+      api.runtime.openOptionsPage();
+    } catch {
+      /* ignore */
+    }
+  }
+});
+
+api.runtime.onStartup.addListener(() => {
+  resetMenus();
+});
+
+api.contextMenus.onClicked.addListener(async (info, tab) => {
+  const id = String(info.menuItemId || '');
+
+  if (id === 'lili-options') {
+    api.runtime.openOptionsPage();
+    return;
+  }
+  if (!tab || typeof tab.id !== 'number') return;
+
+  const action = id.replace(/^lili-/, '').replace(/-/g, '_');
+  const message = { type: 'lili:run', action };
+
+  // Selection inside an iframe: the top-frame content script cannot read it.
+  if (info.frameId && info.selectionText) message.text = info.selectionText;
+
+  sendToTab(tab.id, message);
+});
+
+const COMMANDS = {
+  'translate-selection': 'translate',
+  'rephrase-selection': 'rephrase',
+  'summarize-selection': 'summarize',
+  'summarize-page': 'summarize_page',
+};
+
+api.commands.onCommand.addListener(async (command) => {
+  const action = COMMANDS[command];
+  if (!action) return;
+  try {
+    const tabs = await api.tabs.query({ active: true, lastFocusedWindow: true });
+    const tab = tabs && tabs[0];
+    if (tab && typeof tab.id === 'number') {
+      sendToTab(tab.id, { type: 'lili:run', action });
+    }
+  } catch {
+    /* ignore */
+  }
+});
+
+async function sendToTab(tabId, message) {
+  try {
+    await api.tabs.sendMessage(tabId, message);
+  } catch {
+    /* no content script (chrome://, native PDF, store…) */
+  }
+}
+
+// ------------------------------------------------------------------ messages
+
+api.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!message || typeof message.type !== 'string') return;
+
+  const respond = (promise) => {
+    promise
+      .then((value) => sendResponse(value))
+      .catch((error) =>
+        sendResponse({ ok: false, error: (error && error.message) || String(error) })
+      );
+    return true;
+  };
+
+  if (message.type === 'lili:get-settings') {
+    return respond(getSettings());
+  }
+
+  if (message.type === 'lili:save-settings') {
+    return respond(
+      saveSettings(message.settings).then((settings) => ({ ok: true, settings }))
+    );
+  }
+
+  if (message.type === 'lili:reset-settings') {
+    return respond(
+      api.storage.local
+        .set({ settings: DEFAULT_SETTINGS })
+        .then(() => ({ ok: true, settings: DEFAULT_SETTINGS }))
+    );
+  }
+
+  if (message.type === 'lili:test') {
+    return respond(
+      testProvider(message.provider, message.config).then((result) => ({
+        ok: true,
+        ...result,
+      }))
+    );
+  }
+
+  if (message.type === 'lili:open-options') {
+    try {
+      api.runtime.openOptionsPage();
+    } catch {
+      /* ignore */
+    }
+    sendResponse({ ok: true });
+    return;
+  }
+});
+
+// -------------------------------------------------------------------- ports
+
+api.runtime.onConnect.addListener((port) => {
+  if (port.name !== PORT_NAME) return;
+
+  const controller = new AbortController();
+  let started = false;
+  let closed = false;
+  let keepalive = null;
+  let watchdog = null;
+  let timedOut = false;
+
+  const post = (message) => {
+    if (closed) return;
+    try {
+      port.postMessage(message);
+    } catch {
+      /* port already closed */
+    }
+  };
+
+  const stopTimers = () => {
+    if (keepalive) clearInterval(keepalive);
+    if (watchdog) clearTimeout(watchdog);
+    keepalive = null;
+    watchdog = null;
+  };
+
+  const touch = () => {
+    if (watchdog) clearTimeout(watchdog);
+    watchdog = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, TIMEOUT_MS);
+  };
+
+  port.onMessage.addListener((message) => {
+    if (!message || typeof message.type !== 'string') return;
+
+    if (message.type === 'abort') {
+      controller.abort();
+      return;
+    }
+    if (message.type !== 'start' || started) return;
+
+    started = true;
+    touch();
+
+    // Keep the service worker alive during long calls.
+    keepalive = setInterval(() => {
+      try {
+        const pending = api.runtime.getPlatformInfo();
+        if (pending && typeof pending.catch === 'function') pending.catch(() => {});
+      } catch {
+        /* ignore */
+      }
+    }, 20000);
+
+    runJob({
+      port,
+      message,
+      post,
+      signal: controller.signal,
+      touch,
+      isTimedOut: () => timedOut,
+    })
+      .catch((error) => {
+        if (controller.signal.aborted && !timedOut) return;
+        post({ type: 'error', message: explainError(error, timedOut) });
+      })
+      .finally(() => {
+        stopTimers();
+        closed = true;
+        try {
+          port.disconnect();
+        } catch {
+          /* ignore */
+        }
+      });
+  });
+
+  port.onDisconnect.addListener(() => {
+    closed = true;
+    stopTimers();
+    controller.abort();
+  });
+});
