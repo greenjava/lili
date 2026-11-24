@@ -106,6 +106,7 @@ const SETTINGS = {
   rephrase: { tone: 'neutre' },
   summary: { length: 'moyen' },
   limits: { maxPageChars: 100000, maxSelectionChars: 20000, chunkChars: 1000, maxChunks: 8 },
+  siteRules: { disabled: [], targets: {} },
   ui: {
     toolbar: true,
     pageAction: true,
@@ -545,9 +546,41 @@ async function main() {
     const stoppedStatus = await shadow(demo, "root.querySelector('.lili-status-text').textContent");
     check('arrêt : génération stoppée', /arrêtée/i.test(stoppedStatus), stoppedStatus);
     check('arrêt : panneau conservé', !(await shadow(demo, "root.querySelector('.lili-panel').hidden")));
+
+    // 7. History and favorites
+    await sleep(400);
+    await clickUi(demo, 'history');
+    await demo.waitForFunction(
+      () => {
+        const root = document.getElementById('lili-root')?.shadowRoot;
+        return (
+          root &&
+          !root.querySelector('.lili-history').hidden &&
+          root.querySelectorAll('.lili-history-item').length > 0
+        );
+      },
+      { timeout: 5000 }
+    );
+    const historyCount = await shadow(demo, "root.querySelectorAll('.lili-history-item').length");
+    check('historique : résultats listés', historyCount > 0, String(historyCount));
+    await sleep(300);
+    await shot(demo, '07-history');
+
+    await shadow(demo, "root.querySelector('.lili-history-item [data-history-fav]').click()");
+    await sleep(300);
+    const historyStar = await shadow(
+      demo,
+      "root.querySelector('.lili-history-item [data-history-fav]').textContent"
+    );
+    check('historique : favori enregistré', historyStar === '★', historyStar);
+
+    await shadow(demo, "root.querySelector('.lili-history-item [data-history-open]').click()");
+    await sleep(200);
+    const historyText = await panelText(demo);
+    check('historique : résultat réouvert', historyText.length > 10, historyText.slice(0, 60));
     await clickUi(demo, 'close');
 
-    // 7. Selection context
+    // 8. Selection context
     await options.evaluate(
       (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
       { ...SETTINGS, ui: { ...SETTINGS.ui, context: true } }
@@ -570,7 +603,7 @@ async function main() {
     check('contexte : paragraphe transmis', contextResult.startsWith('[CONTEXT]'), contextResult.slice(0, 60));
     await clickUi(demo, 'close');
 
-    // 8. Direct mode
+    // 9. Direct mode
     await options.evaluate(
       (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
       { ...SETTINGS, ui: { ...SETTINGS.ui, directMode: true } }
@@ -591,7 +624,7 @@ async function main() {
     const directPanelHidden = await shadow(demo, "root.querySelector('.lili-panel').hidden");
     check('mode direct : champ remplacé sans panneau', directPanelHidden);
 
-    // 9. Remplacement automatique (option)
+    // 10. Remplacement automatique (option)
     await options.evaluate((settings) => {
       return new Promise((resolve) => chrome.storage.local.set({ settings }, resolve));
     }, { ...SETTINGS, ui: { ...SETTINGS.ui, autoReplace: true } });
@@ -613,7 +646,40 @@ async function main() {
     check('remplacement auto : champ mis à jour', autoValue === TRANSLATION, autoValue);
     check('remplacement auto : panneau refermé', autoPanelHidden);
 
-    // 6. Chemin d'erreur (API injoignable)
+    // 11. Site rules
+    await options.evaluate(
+      (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
+      { ...SETTINGS, siteRules: { disabled: ['127.0.0.1'], targets: {} } }
+    );
+    await sleep(400);
+
+    await selectTextarea(demo, 'field');
+    await sleep(300);
+    const siteBarHidden = await shadow(demo, "root.querySelector('.lili-bar').hidden");
+    check('sites : barre désactivée sur le domaine', siteBarHidden);
+
+    await options.evaluate(
+      (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
+      { ...SETTINGS, siteRules: { disabled: [], targets: { '127.0.0.1': 'fr' } } }
+    );
+    await sleep(400);
+
+    await demo.evaluate(() => {
+      document.getElementById('field').value = 'Hello, this is an English text.';
+    });
+    await selectTextarea(demo, 'field');
+    await waitBar(demo);
+    await clickAction(demo, 'translate');
+    await waitResult(demo);
+    const siteTargetResult = await panelText(demo);
+    check(
+      'sites : langue cible du domaine',
+      siteTargetResult.startsWith('OVH-TRANSLATION[English->French]'),
+      siteTargetResult
+    );
+    await clickUi(demo, 'close');
+
+    // 12. Chemin d'erreur (API injoignable)
     await options.evaluate((settings) => {
       return new Promise((resolve) => chrome.storage.local.set({ settings }, resolve));
     }, (() => {

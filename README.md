@@ -35,6 +35,10 @@ intermediate server.
 - **Direct mode** for editable fields: replace the text without opening the result panel.
 - **Optional surrounding context**: send the enclosing paragraph with a request for better
   consistency (disabled by default).
+- **Local history** with favorites, one-click restore and a clear action. Entries stay in the
+  browser profile.
+- **Per-site rules**: disable the floating toolbar on chosen domains and force a translation target
+  (`domain = fr`).
 - **In-place replacement** in `input`, `textarea` and `contenteditable` fields, with undo
   (`Ctrl+Z` / `Cmd+Z`) and an optional automatic replacement mode.
 - **Page summaries with map-reduce**: the main content is extracted, split into sections, summarized
@@ -51,6 +55,10 @@ intermediate server.
 | Connections | Popup |
 | --- | --- |
 | ![Connections](docs/reglages.png) | ![Popup](docs/popup.png) |
+
+Local history, available from the clock icon in the result panel:
+
+![History](docs/historique.png)
 
 > Screenshots show the French interface. The extension UI is currently in French; generated text
 > follows the language settings.
@@ -154,6 +162,8 @@ OLLAMA_ORIGINS="*" ollama serve
 - **Direct mode**: replace a field without opening the panel (no diff step).
 - **Surrounding context**: send the enclosing paragraph with the selection. Disabled by default
   because it sends more text to the provider.
+- **Sites**: disable the floating toolbar per domain and force a translation target
+  (`domain = fr` / `domain = en`).
 - **Limits**: maximum selection size and maximum page size analyzed.
 
 ## Usage
@@ -168,6 +178,8 @@ OLLAMA_ORIGINS="*" ollama serve
    - **Stop** interrupts a running generation and keeps the partial result;
    - **Copy** sends the result to the clipboard;
    - **Retry** runs the same request again;
+   - the **clock icon** opens the local history: star favorites, click an entry to restore it, or
+     clear the list;
    - the **close icon** — or `Esc` — closes the panel.
 
 Drag the panel by its header to move it, and resize it from the grip in the bottom-right corner. The
@@ -186,7 +198,8 @@ also handles pasted text.
 - The Firefox manifest declares `websiteContent` data collection: the processed text is transmitted
   to the configured provider, and to that provider only.
 - The optional surrounding context sends the enclosing paragraph as well; it is disabled by default.
-- Results are processed in memory and are not stored by the extension.
+- The result history is stored locally in the browser profile (50 non-favorite entries plus
+  favorites) and can be cleared from the history panel.
 
 ## Known limitations
 

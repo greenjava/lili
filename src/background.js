@@ -13,6 +13,9 @@ const LANG_NAMES = { fr: 'français', en: 'anglais' };
 const ENGLISH_LANG = { fr: 'French', en: 'English' };
 const DEDICATED_TRANSLATION_MAX_CHARS = 12000;
 const CONTEXT_MAX_CHARS = 2000;
+const HISTORY_KEY = 'history';
+const HISTORY_MAX = 50;
+const HISTORY_TEXT_MAX = 10000;
 
 const ROUTE_ACTIONS = {
   refine_shorter: 'refine',
@@ -56,8 +59,11 @@ const DEFAULT_SETTINGS = {
     toolbar: true,
     pageAction: true,
     autoReplace: false,
+    directMode: false,
+    context: false,
     actions: ['translate', 'rephrase', 'rephrase_translate', 'summarize', 'fix'],
   },
+  siteRules: { disabled: [], targets: {} },
 };
 
 const PROVIDER_LABELS = {
@@ -134,6 +140,66 @@ async function saveSettings(incoming) {
   const next = deepMerge(current, incoming || {});
   await api.storage.local.set({ settings: next });
   return next;
+}
+
+function historyEntryId() {
+  return 'h_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+async function readHistory() {
+  const stored = await api.storage.local.get(HISTORY_KEY);
+  return Array.isArray(stored[HISTORY_KEY]) ? stored[HISTORY_KEY] : [];
+}
+
+async function saveHistory(entries) {
+  const favorites = entries.filter((entry) => entry.favorite);
+  const others = entries.filter((entry) => !entry.favorite).slice(0, HISTORY_MAX);
+  const trimmed = [...favorites, ...others]
+    .filter((entry) => entry && entry.text)
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 100);
+
+  await api.storage.local.set({ [HISTORY_KEY]: trimmed });
+  return trimmed;
+}
+
+async function addHistoryEntry(action, text) {
+  const clean = String(text || '').trim().slice(0, HISTORY_TEXT_MAX);
+  if (!clean) return { ok: true, history: await readHistory() };
+
+  const entries = await readHistory();
+  const existing = entries.find((entry) => entry.action === action && entry.text === clean);
+
+  if (existing) {
+    existing.at = Date.now();
+  } else {
+    entries.unshift({
+      id: historyEntryId(),
+      action: String(action || ''),
+      text: clean,
+      at: Date.now(),
+      favorite: false,
+    });
+  }
+
+  return { ok: true, history: await saveHistory(entries) };
+}
+
+async function setHistoryFavorite(id, favorite) {
+  const entries = await readHistory();
+  const entry = entries.find((item) => item.id === id);
+  if (entry) entry.favorite = !!favorite;
+  return { ok: true, history: await saveHistory(entries) };
+}
+
+async function removeHistoryEntry(id) {
+  const entries = await readHistory();
+  return { ok: true, history: await saveHistory(entries.filter((item) => item.id !== id)) };
+}
+
+async function clearHistory() {
+  await api.storage.local.set({ [HISTORY_KEY]: [] });
+  return { ok: true, history: [] };
 }
 
 /** Convert the old single-provider settings to connections + routing. */
@@ -292,7 +358,29 @@ function titleCaseFirst(text) {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 
-function resolveLanguages(action, text, settings) {
+function hostMatches(host, rule) {
+  const normalized = String(rule || '').toLowerCase();
+  return !!normalized && (host === normalized || host.endsWith('.' + normalized));
+}
+
+function siteTargetFor(settings, url) {
+  const targets = settings.siteRules && settings.siteRules.targets;
+  if (!targets || !url) return '';
+
+  let host;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+
+  for (const [rule, target] of Object.entries(targets)) {
+    if ((target === 'fr' || target === 'en') && hostMatches(host, rule)) return target;
+  }
+  return '';
+}
+
+function resolveLanguages(action, text, settings, siteTarget) {
   const output = settings.language.output === 'en' ? 'en' : 'fr';
   const detected = detectLanguage(text);
 
@@ -301,7 +389,8 @@ function resolveLanguages(action, text, settings) {
   }
 
   const mode = settings.language.translateTarget;
-  const target = mode === 'fr' || mode === 'en' ? mode : detected === 'fr' ? 'en' : 'fr';
+  const forced = siteTarget === 'fr' || siteTarget === 'en' ? siteTarget : '';
+  const target = forced || (mode === 'fr' || mode === 'en' ? mode : detected === 'fr' ? 'en' : 'fr');
   const source = detected === 'unknown' ? target : detected;
 
   return {
@@ -1225,7 +1314,8 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
     );
   }
 
-  const languages = resolveLanguages(action, text, settings);
+  const siteTarget = siteTargetFor(settings, message.context && message.context.url);
+  const languages = resolveLanguages(action, text, settings, siteTarget);
 
   if (action === 'translate' || action === 'rephrase_translate') {
     if (languages.label) post({ type: 'meta', text: languages.label });
@@ -1455,6 +1545,26 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return respond(
       listModels(message.connection, message.refresh).then((models) => ({ ok: true, models }))
     );
+  }
+
+  if (message.type === 'lili:history-add') {
+    return respond(addHistoryEntry(message.action, message.text));
+  }
+
+  if (message.type === 'lili:history-list') {
+    return respond(readHistory().then((history) => ({ ok: true, history })));
+  }
+
+  if (message.type === 'lili:history-favorite') {
+    return respond(setHistoryFavorite(message.id, message.favorite));
+  }
+
+  if (message.type === 'lili:history-remove') {
+    return respond(removeHistoryEntry(message.id));
+  }
+
+  if (message.type === 'lili:history-clear') {
+    return respond(clearHistory());
   }
 
   if (message.type === 'lili:open-options') {

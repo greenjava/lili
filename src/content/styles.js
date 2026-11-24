@@ -262,6 +262,69 @@ globalThis.LILI_STYLES = `
   .lili-diff ins { background: #10301f; color: #86efac; }
 }
 
+.lili-history { display: flex; flex-direction: column; gap: 6px; }
+
+.lili-history-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.lili-history-tab {
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.lili-history-tab:hover { background: var(--soft); color: var(--fg); }
+.lili-history-tab.is-active { background: var(--soft); color: var(--fg); font-weight: 600; }
+
+.lili-history-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 5px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.lili-history-open {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lili-history-open:hover { background: var(--soft); }
+.lili-history-action { font-size: 11px; font-weight: 600; }
+.lili-history-time { margin-left: 6px; font-size: 10px; color: var(--muted); }
+
+.lili-history-preview {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lili-history-empty { padding: 8px 6px; color: var(--muted); font-size: 12px; }
+.lili-history .lili-iconbtn { width: 22px; height: 22px; font-size: 15px; line-height: 1; }
+.lili-history .lili-iconbtn:hover { color: var(--fg); }
+
 .lili-foot {
   display: flex;
   align-items: center;

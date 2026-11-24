@@ -15,6 +15,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Before/after diff before replacing a selection.
 - Optional surrounding-paragraph context for translations, rephrasings and corrections.
 - Direct replacement mode: replace editable fields without opening the result panel.
+- Local result history with favorites, restore and clear.
+- Per-site rules to disable the floating toolbar and force a translation target per domain.
 - SHA256 checksums are published with each release.
 - Release notes are generated from this changelog.
 

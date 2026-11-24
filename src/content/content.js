@@ -39,6 +39,8 @@
     compare:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18"/><path d="M5 7h4M5 12h4M5 17h4M15 7h4M15 12h4M15 17h4"/></svg>',
     close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    history:
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     settings:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>',
   };
@@ -96,6 +98,15 @@
     const title = node('span', { class: 'lili-title', text: 'Résultat' });
     const meta = node('span', { class: 'lili-meta' });
 
+    const historyBtn = node('button', {
+      type: 'button',
+      class: 'lili-iconbtn',
+      'data-ui': 'history',
+      title: 'Historique',
+      'aria-label': 'Historique',
+    });
+    historyBtn.appendChild(iconNode('history'));
+
     const settingsBtn = node('button', {
       type: 'button',
       class: 'lili-iconbtn',
@@ -114,7 +125,13 @@
     });
     closeBtn.appendChild(iconNode('close'));
 
-    const head = node('div', { class: 'lili-head' }, [title, meta, settingsBtn, closeBtn]);
+    const head = node('div', { class: 'lili-head' }, [
+      title,
+      meta,
+      historyBtn,
+      settingsBtn,
+      closeBtn,
+    ]);
 
     const text = node('div', { class: 'lili-text' });
     const error = node('div', { class: 'lili-error', hidden: '' });
@@ -123,7 +140,8 @@
       node('span', { class: 'lili-spinner' }),
       statusText,
     ]);
-    const body = node('div', { class: 'lili-body' }, [text, error, status]);
+    const historyView = node('div', { class: 'lili-history', hidden: '' });
+    const body = node('div', { class: 'lili-body' }, [text, historyView, error, status]);
     const followUps = node('div', { class: 'lili-followups', hidden: '' });
 
     const replaceBtn = actionButton('replace', 'replace', 'Remplacer', true);
@@ -187,6 +205,9 @@
       confirmBtn,
       cancelBtn,
       followUps,
+      historyBtn,
+      history: historyView,
+      foot,
     };
   }
 
@@ -196,6 +217,9 @@
   let job = null;
   let lastRequest = null;
   let toastTimer = null;
+  let panelView = 'result';
+  let historyEntries = [];
+  let historyFilter = 'all';
 
   // ----------------------------------------------------------------- settings
 
@@ -206,6 +230,7 @@
       settings = null;
     }
     if (ui) renderBar();
+    if (siteDisabled()) hideBar();
   }
 
   // --------------------------------------------------------------------- UI
@@ -254,6 +279,9 @@
       confirmBtn: parts.confirmBtn,
       cancelBtn: parts.cancelBtn,
       followUps: parts.followUps,
+      historyBtn: parts.historyBtn,
+      history: parts.history,
+      foot: parts.foot,
       toast: parts.toast,
     };
 
@@ -518,9 +546,22 @@
     panel.style.top = Math.round(top) + 'px';
   }
 
+  function hostMatches(host, rule) {
+    const normalized = String(rule || '').toLowerCase();
+    return !!normalized && (host === normalized || host.endsWith('.' + normalized));
+  }
+
+  function siteDisabled() {
+    const rules = settings && settings.siteRules && settings.siteRules.disabled;
+    if (!Array.isArray(rules) || !rules.length) return false;
+    const host = location.hostname.toLowerCase();
+    return rules.some((rule) => hostMatches(host, rule));
+  }
+
   function showBar(selection) {
     ensureUI();
     if (settings && settings.ui && settings.ui.toolbar === false) return;
+    if (siteDisabled()) return;
     if (!selection || !selection.rect) return;
     ui.bar.hidden = false;
     placeBar(selection.rect);
@@ -653,6 +694,7 @@
   }
 
   function resetPanel(action, anchor, keepPosition) {
+    panelView = 'result';
     ui.title.textContent = (ACTIONS[action] && ACTIONS[action].label) || action;
     ui.meta.textContent = '';
     ui.meta.title = '';
@@ -673,6 +715,11 @@
     ui.retryBtn.disabled = true;
     ui.followUps.hidden = true;
     ui.followUps.textContent = '';
+    ui.history.hidden = true;
+    ui.history.textContent = '';
+    ui.text.hidden = false;
+    ui.foot.hidden = false;
+    ui.historyBtn.disabled = true;
     ui.panel.classList.add('is-streaming');
     ui.body.scrollTop = 0;
     job = { action, text: '', stick: true };
@@ -762,8 +809,13 @@
       ui.meta.title = [info.provider, info.model].filter(Boolean).join(' / ');
     }
 
+    ui.historyBtn.disabled = false;
     const canReplace = !!(lastRequest && isReplaceable(lastRequest.selection));
     updateActionButtons(canReplace);
+
+    if (!job.fromHistory && job.text.trim()) {
+      addHistoryEntry(job.action, job.text.trim());
+    }
 
     if (job.direct) {
       if (canReplace && job.text.trim()) {
@@ -812,6 +864,7 @@
     ui.followUps.hidden = true;
     ui.confirmBtn.hidden = true;
     ui.cancelBtn.hidden = true;
+    ui.historyBtn.disabled = false;
     setStatus('');
     ui.error.hidden = false;
     ui.error.textContent = message;
@@ -834,8 +887,14 @@
     ui.cancelBtn.hidden = true;
     ui.stopBtn.hidden = true;
     ui.followUps.hidden = true;
+    ui.history.hidden = true;
+    ui.history.textContent = '';
+    ui.text.hidden = false;
+    ui.foot.hidden = false;
+    ui.historyBtn.disabled = false;
     ui.textNode.data = '';
     setStatus('');
+    panelView = 'result';
     job = null;
   }
 
@@ -856,6 +915,7 @@
 
     ui.panel.classList.remove('is-streaming');
     ui.stopBtn.hidden = true;
+    ui.historyBtn.disabled = false;
     setStatus('Génération arrêtée.');
 
     const canReplace = !!(lastRequest && isReplaceable(lastRequest.selection));
@@ -876,6 +936,215 @@
       /* already closed */
     }
     job.port = null;
+  }
+
+  // --------------------------------------------------------------- history
+
+  function addHistoryEntry(action, text) {
+    const clean = String(text || '').trim();
+    if (!clean) return;
+    try {
+      const pending = api.runtime.sendMessage({ type: 'lili:history-add', action, text: clean });
+      if (pending && typeof pending.catch === 'function') pending.catch(() => {});
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function timeLabel(at) {
+    const diff = Date.now() - Number(at || 0);
+    if (!Number.isFinite(diff) || diff < 0) return '';
+    if (diff < 60000) return 'à l’instant';
+    if (diff < 3600000) return 'il y a ' + Math.round(diff / 60000) + ' min';
+    if (diff < 86400000) return 'il y a ' + Math.round(diff / 3600000) + ' h';
+    return new Date(at).toLocaleDateString('fr-FR');
+  }
+
+  async function openHistory() {
+    if (!ui) return;
+    if (job && job.port && !job.finished) return;
+
+    panelView = 'history';
+    historyFilter = 'all';
+    ui.title.textContent = 'Historique';
+    ui.meta.textContent = '';
+    ui.meta.title = '';
+    delete ui.meta.dataset.direction;
+    ui.text.hidden = true;
+    ui.error.hidden = true;
+    ui.status.hidden = true;
+    ui.followUps.hidden = true;
+    ui.foot.hidden = true;
+    ui.history.hidden = false;
+    ui.body.scrollTop = 0;
+    ui.history.textContent = '';
+    ui.history.appendChild(node('div', { class: 'lili-history-empty', text: 'Chargement…' }));
+
+    try {
+      const response = await api.runtime.sendMessage({ type: 'lili:history-list' });
+      historyEntries = (response && response.history) || [];
+    } catch {
+      historyEntries = [];
+    }
+
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (!ui) return;
+    ui.history.textContent = '';
+
+    const head = node('div', { class: 'lili-history-head' });
+    for (const [id, label] of [['all', 'Tous'], ['favorites', 'Favoris']]) {
+      head.appendChild(
+        node('button', {
+          type: 'button',
+          class: 'lili-history-tab' + (historyFilter === id ? ' is-active' : ''),
+          'data-history-tab': id,
+          text: label,
+        })
+      );
+    }
+
+    const clear = node('button', {
+      type: 'button',
+      class: 'lili-action',
+      'data-history-clear': '1',
+      text: 'Effacer',
+    });
+    clear.style.marginLeft = 'auto';
+    head.appendChild(clear);
+    ui.history.appendChild(head);
+
+    const entries =
+      historyFilter === 'favorites' ? historyEntries.filter((entry) => entry.favorite) : historyEntries;
+
+    if (!entries.length) {
+      ui.history.appendChild(
+        node('div', {
+          class: 'lili-history-empty',
+          text: historyFilter === 'favorites' ? 'Aucun favori.' : 'Aucun résultat pour l’instant.',
+        })
+      );
+      return;
+    }
+
+    for (const entry of entries) {
+      const item = node('div', { class: 'lili-history-item' });
+
+      const open = node('button', {
+        type: 'button',
+        class: 'lili-history-open',
+        'data-history-open': entry.id,
+      });
+      open.appendChild(
+        node('span', {
+          class: 'lili-history-action',
+          text: (ACTIONS[entry.action] && ACTIONS[entry.action].label) || entry.action || 'Résultat',
+        })
+      );
+      open.appendChild(node('span', { class: 'lili-history-time', text: timeLabel(entry.at) }));
+      open.appendChild(
+        node('span', {
+          class: 'lili-history-preview',
+          text: entry.text.replace(/\s+/g, ' ').slice(0, 140),
+        })
+      );
+      item.appendChild(open);
+
+      const star = node('button', {
+        type: 'button',
+        class: 'lili-iconbtn',
+        'data-history-fav': entry.id,
+        title: entry.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+      });
+      star.textContent = entry.favorite ? '★' : '☆';
+      item.appendChild(star);
+
+      const remove = node('button', {
+        type: 'button',
+        class: 'lili-iconbtn',
+        'data-history-remove': entry.id,
+        title: 'Supprimer',
+      });
+      remove.textContent = '×';
+      item.appendChild(remove);
+
+      ui.history.appendChild(item);
+    }
+  }
+
+  async function toggleHistoryFavorite(id) {
+    const entry = historyEntries.find((item) => item.id === id);
+    if (!entry) return;
+    try {
+      const response = await api.runtime.sendMessage({
+        type: 'lili:history-favorite',
+        id,
+        favorite: !entry.favorite,
+      });
+      if (response && response.history) historyEntries = response.history;
+    } catch {
+      /* ignore */
+    }
+    renderHistory();
+  }
+
+  async function removeHistoryEntry(id) {
+    try {
+      const response = await api.runtime.sendMessage({ type: 'lili:history-remove', id });
+      if (response && response.history) historyEntries = response.history;
+    } catch {
+      /* ignore */
+    }
+    renderHistory();
+  }
+
+  async function clearHistoryEntries() {
+    if (!confirm('Effacer tout l’historique des résultats ?')) return;
+    try {
+      const response = await api.runtime.sendMessage({ type: 'lili:history-clear' });
+      if (response && response.history) historyEntries = response.history;
+    } catch {
+      /* ignore */
+    }
+    renderHistory();
+  }
+
+  function openHistoryEntry(id) {
+    const entry = historyEntries.find((item) => item.id === id);
+    if (!entry) return;
+
+    panelView = 'result';
+    ui.history.hidden = true;
+    ui.text.hidden = false;
+    ui.foot.hidden = false;
+    ui.error.hidden = true;
+    ui.followUps.hidden = true;
+    ui.title.textContent = (ACTIONS[entry.action] && ACTIONS[entry.action].label) || 'Résultat';
+    ui.meta.textContent = timeLabel(entry.at);
+    ui.meta.title = new Date(entry.at).toLocaleString('fr-FR');
+    delete ui.meta.dataset.direction;
+
+    job = {
+      action: entry.action,
+      text: entry.text,
+      finished: true,
+      fromHistory: true,
+      stick: false,
+    };
+    lastRequest = null;
+
+    setResultView();
+    ui.confirmBtn.hidden = true;
+    ui.cancelBtn.hidden = true;
+    ui.stopBtn.hidden = true;
+    ui.copyBtn.hidden = false;
+    ui.retryBtn.hidden = false;
+    updateActionButtons(false);
+    renderFollowUps();
+    setStatus('');
+    ui.body.scrollTop = 0;
   }
 
   // --------------------------------------------------------------- actions
@@ -996,6 +1265,42 @@
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
 
+    const historyTab = target.closest('[data-history-tab]');
+    if (historyTab) {
+      event.preventDefault();
+      historyFilter = historyTab.getAttribute('data-history-tab');
+      renderHistory();
+      return;
+    }
+
+    const historyClear = target.closest('[data-history-clear]');
+    if (historyClear) {
+      event.preventDefault();
+      clearHistoryEntries();
+      return;
+    }
+
+    const historyOpen = target.closest('[data-history-open]');
+    if (historyOpen) {
+      event.preventDefault();
+      openHistoryEntry(historyOpen.getAttribute('data-history-open'));
+      return;
+    }
+
+    const historyFav = target.closest('[data-history-fav]');
+    if (historyFav) {
+      event.preventDefault();
+      toggleHistoryFavorite(historyFav.getAttribute('data-history-fav'));
+      return;
+    }
+
+    const historyRemove = target.closest('[data-history-remove]');
+    if (historyRemove) {
+      event.preventDefault();
+      removeHistoryEntry(historyRemove.getAttribute('data-history-remove'));
+      return;
+    }
+
     const followUpBtn = target.closest('[data-followup]');
     if (followUpBtn) {
       event.preventDefault();
@@ -1030,6 +1335,7 @@
     else if (kind === 'confirm') confirmReplace();
     else if (kind === 'cancel-compare') cancelCompare();
     else if (kind === 'back') restorePrevious();
+    else if (kind === 'history') openHistory();
     else if (kind === 'settings') {
       try {
         api.runtime.sendMessage({ type: 'lili:open-options' });

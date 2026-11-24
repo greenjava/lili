@@ -87,7 +87,8 @@
     rephrase: { tone: 'neutre' },
     summary: { length: 'moyen' },
     limits: { maxSelectionChars: 20000, maxPageChars: 120000 },
-    ui: { toolbar: true, autoReplace: false, actions: [] },
+    ui: { toolbar: true, autoReplace: false, directMode: false, context: false, actions: [] },
+    siteRules: { disabled: [], targets: {} },
   };
 
   const modelCache = {};
@@ -172,6 +173,27 @@
     }
   }
 
+  function normalizeHost(value) {
+    let host = String(value || '').trim().toLowerCase();
+    host = host.split('#')[0].trim();
+    return host.replace(/^https?:\/\//, '').split('/')[0].replace(/:\d+$/, '');
+  }
+
+  function parseDomainLines(text) {
+    return [...new Set(String(text || '').split('\n').map(normalizeHost).filter(Boolean))];
+  }
+
+  function parseTargetLines(text) {
+    const targets = {};
+    for (const line of String(text || '').split('\n')) {
+      const match = line.trim().match(/^([^\s=:]+)\s*(?:=|:|\s)\s*(fr|en)$/i);
+      if (!match) continue;
+      const host = normalizeHost(match[1]);
+      if (host) targets[host] = match[2].toLowerCase();
+    }
+    return targets;
+  }
+
   function fillStaticForm() {
     $('#translateTarget').value = state.language.translateTarget || 'auto';
     $('#output').value = state.language.output || 'fr';
@@ -183,6 +205,10 @@
     $('#autoReplace').checked = !!state.ui.autoReplace;
     $('#directMode').checked = !!state.ui.directMode;
     $('#context').checked = !!state.ui.context;
+    $('#sitesDisabled').value = (state.siteRules.disabled || []).join('\n');
+    $('#sitesTargets').value = Object.entries(state.siteRules.targets || {})
+      .map(([host, target]) => host + ' = ' + target)
+      .join('\n');
     renderActions(state.ui.actions);
   }
 
@@ -209,6 +235,10 @@
       directMode: $('#directMode').checked,
       context: $('#context').checked,
       actions: actions.length ? actions : LILI.SELECTION_ACTIONS,
+    };
+    state.siteRules = {
+      disabled: parseDomainLines($('#sitesDisabled').value),
+      targets: parseTargetLines($('#sitesTargets').value),
     };
   }
 
@@ -240,6 +270,7 @@
       summary: state.summary,
       limits: state.limits,
       ui: state.ui,
+      siteRules: state.siteRules,
     };
   }
 
@@ -731,6 +762,15 @@
     state.summary = { ...state.summary, ...(settings.summary || {}) };
     state.limits = { ...state.limits, ...(settings.limits || {}) };
     state.ui = { ...state.ui, ...(settings.ui || {}) };
+    state.siteRules = {
+      disabled: Array.isArray(settings.siteRules && settings.siteRules.disabled)
+        ? settings.siteRules.disabled
+        : [],
+      targets:
+        settings.siteRules && settings.siteRules.targets && typeof settings.siteRules.targets === 'object'
+          ? settings.siteRules.targets
+          : {},
+    };
 
     fillStaticForm();
     renderAll();

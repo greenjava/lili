@@ -27,7 +27,8 @@ configured API; there is no backend.
 - Keep the result-panel UI inside its shadow root with `adoptedStyleSheets`.
 - Never log, persist or transmit API keys anywhere except `chrome.storage.local`.
 - Do not add telemetry, analytics or remote logging.
-- Do not change action ids, storage keys (`settings`, `modelCache`, `clientSession`), message types
+- Do not change action ids, storage keys (`settings`, `modelCache`, `clientSession`, `history`),
+  message types
   (`lili:*`), the port name (`lili-stream`) or CSS prefixes (`lili-*`) without a migration.
 - Do not edit `dist/`, `node_modules/`, `.cache/` or `test/e2e/artifacts/`; they are generated or
   ignored.
@@ -80,6 +81,7 @@ then stream the merged summary.
   rephrase: { tone },
   summary: { length },
   limits: { maxPageChars, maxSelectionChars, chunkChars, maxChunks },
+  siteRules: { disabled: [host], targets: { host: 'fr' } },
   ui: { toolbar, pageAction, autoReplace, directMode, context, actions }
 }
 ```
@@ -90,6 +92,10 @@ then stream the merged summary.
   not on the page selection.
 - `ui.directMode` replaces editable fields without showing the panel. `ui.context` sends the
   enclosing paragraph with the request (off by default).
+- `siteRules.disabled` disables the floating toolbar on matching hosts (suffix match);
+  `siteRules.targets` forces the translation target for a host.
+- Results are stored in `history` (local only): 50 non-favorite entries plus favorites. The panel
+  history view is reached with `data-ui="history"`.
 - Connection types: `openai`, `anthropic`, `ollama`.
 - Old settings (`provider` + `providers`) are migrated in `migrateSettings()`; keep this working.
 - Route resolution: explicit task connection → fallback connection → first connection. Model: task

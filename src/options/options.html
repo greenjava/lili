@@ -128,6 +128,28 @@
       </section>
 
       <section class="card">
+        <h2>Sites</h2>
+        <p class="help">
+          Règles appliquées au domaine de la page. Un domaine couvre aussi ses sous-domaines.
+        </p>
+        <div class="field">
+          <label for="sitesDisabled">Désactiver la barre flottante</label>
+          <textarea id="sitesDisabled" rows="4" placeholder="example.com&#10;intranet.example.org"></textarea>
+          <p class="hint">
+            Un domaine par ligne. Les actions restent accessibles par le menu contextuel et le popup.
+          </p>
+        </div>
+        <div class="field">
+          <label for="sitesTargets">Langue cible de traduction par domaine</label>
+          <textarea id="sitesTargets" rows="3" placeholder="example.com = fr&#10;news.example.org = en"></textarea>
+          <p class="hint">
+            Format : <code>domaine = fr</code> ou <code>domaine = en</code>. Prioritaire sur le réglage
+            global.
+          </p>
+        </div>
+      </section>
+
+      <section class="card">
         <h2>Limites</h2>
         <div class="grid">
           <div class="field">

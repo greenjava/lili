@@ -35,6 +35,10 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
 - **Mode direct** pour les champs éditables : remplacement sans ouvrir le panneau.
 - **Contexte optionnel** : envoi du paragraphe englobant pour une meilleure cohérence (désactivé par
   défaut).
+- **Historique local** avec favoris, restauration en un clic et effacement. Les entrées restent dans
+  le profil du navigateur.
+- **Règles par site** : désactiver la barre flottante sur certains domaines et forcer une langue
+  cible (`domaine = fr`).
 - **Remplacement sur place** dans les champs `input`, `textarea` et `contenteditable`, avec annulation
   (`Ctrl+Z` / `Cmd+Z`) et un mode de remplacement automatique optionnel.
 - **Résumé de page en map-reduce** : le contenu principal est extrait, découpé en sections, résumé
@@ -53,6 +57,10 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
 | Connexions | Popup |
 | --- | --- |
 | ![Connexions](docs/reglages.png) | ![Popup](docs/popup.png) |
+
+Historique local, accessible par l’icône horloge du panneau de résultat :
+
+![Historique](docs/historique.png)
 
 ## Installation
 
@@ -158,6 +166,8 @@ OLLAMA_ORIGINS="*" ollama serve
 - **Mode direct** : remplace un champ sans ouvrir le panneau (pas d’étape de diff).
 - **Contexte environnant** : envoie le paragraphe englobant avec la sélection. Désactivé par défaut,
   car cela transmet plus de texte au fournisseur.
+- **Sites** : désactiver la barre flottante par domaine et forcer une langue cible
+  (`domaine = fr` / `domaine = en`).
 - **Limites** : taille maximale d’une sélection et taille maximale d’une page analysée.
 
 ## Utilisation
@@ -172,6 +182,8 @@ OLLAMA_ORIGINS="*" ollama serve
    - **Arrêter** interrompt une génération en cours et conserve le résultat partiel ;
    - **Copier** place le résultat dans le presse-papiers ;
    - **Relancer** rejoue la même demande ;
+   - l’**icône horloge** ouvre l’historique local : ajouter aux favoris, cliquer une entrée pour la
+     restaurer, ou effacer la liste ;
    - la **croix** — ou `Échap` — ferme le panneau.
 
 Faites glisser le panneau par son en-tête pour le déplacer, et redimensionnez-le par la poignée en bas
@@ -193,7 +205,8 @@ aussi de traiter un texte collé.
   fournisseur configuré, et à lui seul.
 - Le contexte environnant optionnel transmet également le paragraphe englobant ; il est désactivé
   par défaut.
-- Les résultats sont traités en mémoire et ne sont pas conservés par l’extension.
+- L’historique des résultats est stocké localement dans le profil du navigateur (50 entrées hors
+  favoris, plus les favoris) et peut être effacé depuis le panneau Historique.
 
 ## Limites connues
 
