@@ -154,7 +154,7 @@ OLLAMA_ORIGINS="*" ollama serve
    - **Remplacer** (champ éditable) — remplace la sélection, `Ctrl+Z` pour annuler ;
    - **Copier** — presse-papiers ;
    - **Relancer** — relance la même demande ;
-   - **Échap** — ferme.
+   - **Fermer** (croix ou bouton en pied) — ferme le panneau, comme `Échap`.
 
 Le bouton **Page** de la barre, le popup et `Alt+Maj+S` lancent le résumé de la page. Le popup permet
 aussi de traiter un texte collé.

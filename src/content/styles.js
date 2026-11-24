@@ -129,22 +129,25 @@ globalThis.LILI_STYLES = `
 }
 
 .lili-title {
+  flex: none;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.01em;
 }
 
 .lili-meta {
+  flex: 1 1 auto;
+  min-width: 0;
   margin-left: auto;
   font-size: 11px;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 55%;
 }
 
 .lili-iconbtn {
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -159,7 +162,7 @@ globalThis.LILI_STYLES = `
 }
 
 .lili-iconbtn:hover { background: var(--soft); color: var(--fg); }
-.lili-iconbtn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.lili-iconbtn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
 
 .lili-body {
   flex: 1 1 auto;

@@ -57,8 +57,14 @@
     const markup = ICONS[name];
     if (!markup) return document.createTextNode('');
     try {
-      const parsed = new DOMParser().parseFromString(markup, 'image/svg+xml');
-      return document.importNode(parsed.documentElement, true);
+      // XML parsing needs an explicit namespace, unlike inline HTML <svg>.
+      const source = markup.includes('xmlns=')
+        ? markup
+        : markup.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+      const parsed = new DOMParser().parseFromString(source, 'image/svg+xml');
+      const root = parsed.documentElement;
+      if (!root || root.nodeName === 'parsererror') return document.createTextNode('');
+      return document.importNode(root, true);
     } catch {
       return document.createTextNode('');
     }
@@ -125,11 +131,14 @@
     const retryBtn = actionButton('retry', 'retry', 'Relancer');
     retryBtn.disabled = true;
 
+    const footerClose = actionButton('close', 'close', 'Fermer');
+
     const foot = node('div', { class: 'lili-foot' }, [
       replaceBtn,
       copyBtn,
       retryBtn,
       node('span', { class: 'lili-kbd', text: 'Échap' }),
+      footerClose,
     ]);
 
     const panel = node(
