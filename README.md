@@ -226,6 +226,9 @@ The harness starts two fake OpenAI providers, loads the extension in Chrome and 
 routing, OVHcloud model handling, streaming, replacement, summaries, the popup, and panel dragging
 and resizing (37 assertions).
 
+AI coding agents should read [AGENTS.md](AGENTS.md) first: it documents invariants, provider quirks
+and change checklists.
+
 Project layout:
 
 ```

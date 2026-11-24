@@ -233,6 +233,9 @@ Le harness démarre deux faux fournisseurs OpenAI, charge l’extension dans Chr
 routage par tâche, la gestion des modèles OVHcloud, le streaming, le remplacement, les résumés, le
 popup, ainsi que le déplacement et le redimensionnement du panneau (37 assertions).
 
+Les agents de codage IA trouveront dans [AGENTS.md](AGENTS.md) les invariants, les spécificités des
+fournisseurs et des checklists de modification.
+
 Organisation du dépôt :
 
 ```
