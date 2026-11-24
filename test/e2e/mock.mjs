@@ -32,6 +32,12 @@ const MOCK = {
     'À retenir : le flux complet fonctionne, du clic jusqu’au panneau.',
   notes: '- Note factuelle : le texte décrit une procédure de test.\n- Chiffre clé : 42.',
   test: 'OK',
+  refineShorter: 'REFINE-SHORTER: Version courte du texte.',
+  refineLonger:
+    'REFINE-LONGER: ' + 'Développement détaillé du texte pour permettre un arrêt en cours de génération. '.repeat(20),
+  refineFormal: 'REFINE-FORMAL: Version formelle du texte.',
+  refineBullets: 'REFINE-BULLETS:\n- Premier point\n- Deuxième point\n- Troisième point',
+  refineExplain: 'REFINE-EXPLAIN: Explication simple du texte.',
 };
 
 function pickKind(system, flavor) {
@@ -40,6 +46,14 @@ function pickKind(system, flavor) {
     if (/Tu rédiges le résumé final/i.test(system)) return 'page';
     if (/Tu résumes «/i.test(system)) return 'page';
     return 'summarize';
+  }
+  if (/Tu améliores un texte/i.test(system)) {
+    if (/Réduis le texte/i.test(system)) return 'refineShorter';
+    if (/Développe le texte/i.test(system)) return 'refineLonger';
+    if (/ton plus formel/i.test(system)) return 'refineFormal';
+    if (/liste à puces/i.test(system)) return 'refineBullets';
+    if (/mots simples/i.test(system)) return 'refineExplain';
+    return 'refineShorter';
   }
   if (/Tu es un test de connexion/i.test(system)) return 'test';
   if (/Tu es un traducteur professionnel/i.test(system)) return 'translate';
@@ -112,6 +126,11 @@ function handler(flavor) {
     const user = (messages.find((m) => m.role === 'user') || {}).content || '';
 
     let text = MOCK[pickKind(system, flavor)] || MOCK.translate;
+
+    // Context is sent in the user message; echo a marker so tests can check it.
+    if (/Contexte \(référence uniquement/.test(user)) {
+      text = '[CONTEXT] ' + text;
+    }
 
     // OVHcloud Olala translate style: required language fields, user message only.
     if (payload.source_language || payload.target_language) {

@@ -12,6 +12,15 @@ const TEST_TIMEOUT_MS = 20000;
 const LANG_NAMES = { fr: 'français', en: 'anglais' };
 const ENGLISH_LANG = { fr: 'French', en: 'English' };
 const DEDICATED_TRANSLATION_MAX_CHARS = 12000;
+const CONTEXT_MAX_CHARS = 2000;
+
+const ROUTE_ACTIONS = {
+  refine_shorter: 'refine',
+  refine_longer: 'refine',
+  refine_formal: 'refine',
+  refine_bullets: 'refine',
+  refine_explain: 'refine',
+};
 
 const DEFAULT_SETTINGS = {
   connections: [
@@ -32,6 +41,7 @@ const DEFAULT_SETTINGS = {
     fix: { connection: '', model: '' },
     summarize: { connection: '', model: '' },
     summarize_page: { connection: '', model: '' },
+    refine: { connection: '', model: '' },
   },
   language: { translateTarget: 'auto', output: 'fr' },
   rephrase: { tone: 'neutre' },
@@ -342,7 +352,39 @@ function summaryRule(length) {
 }
 
 function buildMessages(action, payload) {
-  const { text, settings, languages } = payload;
+  const { text, settings, languages, context } = payload;
+  const user = userMessage(withContext(text, context));
+
+  if (action.startsWith('refine_')) {
+    const instructions = {
+      refine_shorter:
+        'Réduis le texte de 30 à 50 % en conservant les idées, les chiffres et les noms importants.',
+      refine_longer:
+        'Développe le texte avec plus de détails et d’explications, sans inventer de faits.',
+      refine_formal:
+        'Réécris le texte sur un ton plus formel et professionnel, sans le rallonger inutilement.',
+      refine_bullets:
+        'Transforme le texte en une liste à puces claire et concise, en gardant l’essentiel.',
+      refine_explain:
+        'Explique le texte avec des mots simples, comme à un lecteur non spécialiste, sans ajouter d’informations fausses.',
+    };
+
+    if (!instructions[action]) throw new Error('Action non prise en charge : ' + action);
+
+    const system = [
+      'Tu améliores un texte fourni par l’utilisateur.',
+      'Conserve la même langue que le texte, le même sens et les mêmes faits.',
+      instructions[action],
+      'N’ajoute aucun commentaire, aucun préambule, aucun guillemet.',
+      'Réponds uniquement avec le texte final.',
+    ].join('\n');
+
+    return {
+      messages: [systemMessage(system), user],
+      maxTokens: 3000,
+      temperature: 0.35,
+    };
+  }
 
   if (action === 'translate') {
     const targetName = languages.targetName;
@@ -362,7 +404,7 @@ function buildMessages(action, payload) {
     ].join('\n');
 
     return {
-      messages: [systemMessage(system), userMessage(text)],
+      messages: [systemMessage(system), user],
       maxTokens: 4000,
       temperature: 0.2,
     };
@@ -384,7 +426,7 @@ function buildMessages(action, payload) {
     ].join('\n');
 
     return {
-      messages: [systemMessage(system), userMessage(text)],
+      messages: [systemMessage(system), user],
       maxTokens: 4000,
       temperature: 0.4,
     };
@@ -402,7 +444,7 @@ function buildMessages(action, payload) {
     ].join('\n');
 
     return {
-      messages: [systemMessage(system), userMessage(text)],
+      messages: [systemMessage(system), user],
       maxTokens: 4000,
       temperature: 0.35,
     };
@@ -421,7 +463,7 @@ function buildMessages(action, payload) {
     ].join('\n');
 
     return {
-      messages: [systemMessage(system), userMessage(text)],
+      messages: [systemMessage(system), user],
       maxTokens: 4000,
       temperature: 0.1,
     };
@@ -443,13 +485,23 @@ function buildMessages(action, payload) {
     ].join('\n');
 
     return {
-      messages: [systemMessage(system), userMessage(text)],
+      messages: [systemMessage(system), user],
       maxTokens: length.tokens,
       temperature: 0.25,
     };
   }
 
   throw new Error('Action non prise en charge : ' + action);
+}
+
+function withContext(text, context) {
+  if (!context) return text;
+  return (
+    'Contexte (référence uniquement, ne pas traiter) :\n' +
+    context +
+    '\n\nTexte à traiter :\n' +
+    text
+  );
 }
 
 function systemMessage(content) {
@@ -1136,10 +1188,22 @@ function explainError(error, timedOut) {
 async function runJob({ port, message, post, signal, touch, isTimedOut }) {
   const settings = await getSettings();
   const action = String(message.action || '');
-  const known = ['translate', 'rephrase', 'rephrase_translate', 'summarize', 'fix', 'summarize_page'];
+  const known = [
+    'translate',
+    'rephrase',
+    'rephrase_translate',
+    'summarize',
+    'fix',
+    'summarize_page',
+    'refine_shorter',
+    'refine_longer',
+    'refine_formal',
+    'refine_bullets',
+    'refine_explain',
+  ];
   if (!known.includes(action)) throw new Error('Action inconnue : ' + action);
 
-  const route = resolveRoute(action, settings);
+  const route = resolveRoute(ROUTE_ACTIONS[action] || action, settings);
   validateConnection(route.connection);
 
   if (action === 'summarize_page') {
@@ -1163,12 +1227,14 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
 
   const languages = resolveLanguages(action, text, settings);
 
-  if (languages.label) post({ type: 'meta', text: languages.label });
-  else if (action === 'summarize') {
+  if (action === 'translate' || action === 'rephrase_translate') {
+    if (languages.label) post({ type: 'meta', text: languages.label });
+  } else if (action === 'summarize') {
     post({ type: 'meta', text: titleCaseFirst(languages.outputName) });
   }
 
-  const prepared = buildMessages(action, { text, settings, languages });
+  const contextText = String(message.contextText || '').slice(0, CONTEXT_MAX_CHARS).trim();
+  const prepared = buildMessages(action, { text, settings, languages, context: contextText });
 
   let messages = prepared.messages;
   let extraBody = null;

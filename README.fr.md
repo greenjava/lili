@@ -28,6 +28,13 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
   courante, texte collé ou page entière) et **raccourcis clavier**.
 - **Réponse en streaming** dans un panneau compact construit dans un shadow root : les styles de la
   page ne peuvent pas interférer.
+- **Actions de suivi** sur chaque résultat (raccourcir, détailler, plus formel, en puces, expliquer),
+  avec un retour en un clic au résultat précédent.
+- **Arrêt** d’une génération en cours, en conservant la réponse partielle.
+- **Diff avant/après** avant de remplacer une sélection, avec confirmation explicite.
+- **Mode direct** pour les champs éditables : remplacement sans ouvrir le panneau.
+- **Contexte optionnel** : envoi du paragraphe englobant pour une meilleure cohérence (désactivé par
+  défaut).
 - **Remplacement sur place** dans les champs `input`, `textarea` et `contenteditable`, avec annulation
   (`Ctrl+Z` / `Cmd+Z`) et un mode de remplacement automatique optionnel.
 - **Résumé de page en map-reduce** : le contenu principal est extrait, découpé en sections, résumé
@@ -111,6 +118,7 @@ images) sont filtrés.
 | Correction | … |
 | Résumé de sélection | OVHcloud · `Olala-v1.0-summarise` |
 | Résumé de page | OVHcloud · `Olala-v1.0-summarise` |
+| Suites (raccourcir, détailler…) | un modèle généraliste |
 
 - La ligne **Par défaut** sert de repli quand une tâche ne définit pas de connexion.
 - Une tâche laissée sur **Par défaut** utilise la connexion par défaut.
@@ -147,6 +155,9 @@ OLLAMA_ORIGINS="*" ollama serve
 - **Longueur du résumé** : court, moyen, détaillé.
 - **Barre flottante** : affichage et choix des actions proposées.
 - **Remplacement automatique** : remplace le contenu du champ dès la fin d’une tâche.
+- **Mode direct** : remplace un champ sans ouvrir le panneau (pas d’étape de diff).
+- **Contexte environnant** : envoie le paragraphe englobant avec la sélection. Désactivé par défaut,
+  car cela transmet plus de texte au fournisseur.
 - **Limites** : taille maximale d’une sélection et taille maximale d’une page analysée.
 
 ## Utilisation
@@ -154,7 +165,11 @@ OLLAMA_ORIGINS="*" ollama serve
 1. Sélectionnez du texte : la barre apparaît au-dessus de la sélection.
 2. Cliquez sur une action, ou faites un clic droit puis choisissez *Traduire / Reformuler / Résumer…*.
 3. Le panneau affiche la réponse en streaming :
-   - **Remplacer** (champs éditables) remplace la sélection, `Ctrl+Z` / `Cmd+Z` annule ;
+   - les **suites** affinent le résultat : *Raccourcir*, *Détailler*, *Plus formel*, *En puces*,
+     *Expliquer*, avec *Retour* au résultat précédent ;
+   - **Remplacer** (champs éditables) ouvre un diff avant/après ; **Confirmer** applique le
+     remplacement, `Ctrl+Z` / `Cmd+Z` annule ;
+   - **Arrêter** interrompt une génération en cours et conserve le résultat partiel ;
    - **Copier** place le résultat dans le presse-papiers ;
    - **Relancer** rejoue la même demande ;
    - la **croix** — ou `Échap` — ferme le panneau.
@@ -176,6 +191,9 @@ aussi de traiter un texte collé.
 - Les prompts et les réponses ne sont pas journalisés.
 - Le manifeste Firefox déclare la collecte `websiteContent` : le texte traité est transmis au
   fournisseur configuré, et à lui seul.
+- Le contexte environnant optionnel transmet également le paragraphe englobant ; il est désactivé
+  par défaut.
+- Les résultats sont traités en mémoire et ne sont pas conservés par l’extension.
 
 ## Limites connues
 

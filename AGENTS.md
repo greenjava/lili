@@ -63,6 +63,8 @@ test/e2e/                Chrome harness, two fake providers, demo page
 3. The background resolves the route for the action, builds the prompt, calls the provider with
    SSE/NDJSON or JSON, and posts `delta`, `status`, `meta`, `done` or `error` messages.
 4. The panel appends deltas; replacement uses the DOM references saved at capture time.
+5. Follow-ups send the current result with a `refine_*` action. The original selection is kept in the
+   request so the refined text can still replace the field.
 
 `Page` summaries use map-reduce: extract content, chunk it, summarize each chunk without streaming,
 then stream the merged summary.
@@ -78,11 +80,16 @@ then stream the merged summary.
   rephrase: { tone },
   summary: { length },
   limits: { maxPageChars, maxSelectionChars, chunkChars, maxChunks },
-  ui: { toolbar, pageAction, autoReplace, actions }
+  ui: { toolbar, pageAction, autoReplace, directMode, context, actions }
 }
 ```
 
-- Action ids: `translate`, `rephrase_translate`, `rephrase`, `fix`, `summarize`, `summarize_page`.
+- Action ids: `translate`, `rephrase_translate`, `rephrase`, `fix`, `summarize`, `summarize_page`,
+  plus the follow-ups `refine_shorter`, `refine_longer`, `refine_formal`, `refine_bullets`,
+  `refine_explain`. Follow-ups all route through `routing.refine` and operate on the current result,
+  not on the page selection.
+- `ui.directMode` replaces editable fields without showing the panel. `ui.context` sends the
+  enclosing paragraph with the request (off by default).
 - Connection types: `openai`, `anthropic`, `ollama`.
 - Old settings (`provider` + `providers`) are migrated in `migrateSettings()`; keep this working.
 - Route resolution: explicit task connection → fallback connection → first connection. Model: task
@@ -136,7 +143,7 @@ the options page. Set `E2E_ARTIFACTS=1` to write screenshots to `test/e2e/artifa
    `REPLACEABLE`.
 2. `src/background.js`: add the id to `known`, add a prompt branch in `buildMessages`, add the
    routing default.
-3. `src/options/options.js`: add the id to `TASKS`.
+3. `src/options/options.js`: add the id to `TASKS` (or to `FOLLOW_UPS` for refinements).
 4. `src/manifest.base.json`: add a shortcut only if needed.
 5. Update both READMEs and the e2e settings/assertions.
 

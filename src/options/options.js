@@ -5,7 +5,15 @@
   const api = globalThis.browser || globalThis.chrome;
   const LILI = globalThis.LILI || { ACTIONS: {}, SELECTION_ACTIONS: [] };
 
-  const TASKS = ['translate', 'rephrase_translate', 'rephrase', 'fix', 'summarize', 'summarize_page'];
+  const TASKS = [
+    'translate',
+    'rephrase_translate',
+    'rephrase',
+    'fix',
+    'summarize',
+    'summarize_page',
+    'refine',
+  ];
 
   const PRESETS = [
     {
@@ -173,6 +181,8 @@
     $('#maxPageChars').value = state.limits.maxPageChars || 120000;
     $('#toolbar').checked = state.ui.toolbar !== false;
     $('#autoReplace').checked = !!state.ui.autoReplace;
+    $('#directMode').checked = !!state.ui.directMode;
+    $('#context').checked = !!state.ui.context;
     renderActions(state.ui.actions);
   }
 
@@ -196,6 +206,8 @@
       ...state.ui,
       toolbar: $('#toolbar').checked,
       autoReplace: $('#autoReplace').checked,
+      directMode: $('#directMode').checked,
+      context: $('#context').checked,
       actions: actions.length ? actions : LILI.SELECTION_ACTIONS,
     };
   }

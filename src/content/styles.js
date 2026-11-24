@@ -228,6 +228,40 @@ globalThis.LILI_STYLES = `
   user-select: text;
 }
 
+.lili-followups {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.lili-followup { padding: 4px 8px; font-size: 11.5px; }
+
+.lili-diff {
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+.lili-diff del {
+  background: #fee2e2;
+  color: #991b1b;
+  text-decoration: line-through;
+}
+
+.lili-diff ins {
+  background: #dcfce7;
+  color: #166534;
+  text-decoration: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lili-diff del { background: #3f1d1d; color: #fca5a5; }
+  .lili-diff ins { background: #10301f; color: #86efac; }
+}
+
 .lili-foot {
   display: flex;
   align-items: center;

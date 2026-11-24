@@ -28,6 +28,13 @@ intermediate server.
   selection, pasted text, or whole page) and **keyboard shortcuts**.
 - **Streaming output** in a compact result panel built with a shadow root, so page styles never
   interfere.
+- **Follow-up actions** on any result (shorten, expand, more formal, bullet points, explain), with a
+  one-step back to the previous result.
+- **Stop** a running generation and keep the partial answer.
+- **Before/after diff** before replacing a selection, with an explicit confirmation.
+- **Direct mode** for editable fields: replace the text without opening the result panel.
+- **Optional surrounding context**: send the enclosing paragraph with a request for better
+  consistency (disabled by default).
 - **In-place replacement** in `input`, `textarea` and `contenteditable` fields, with undo
   (`Ctrl+Z` / `Cmd+Z`) and an optional automatic replacement mode.
 - **Page summaries with map-reduce**: the main content is extracted, split into sections, summarized
@@ -109,6 +116,7 @@ authentication. Non-chat models (TTS, Whisper, embeddings, images) are filtered 
 | Fix | … |
 | Summarize selection | OVHcloud · `Olala-v1.0-summarise` |
 | Summarize page | OVHcloud · `Olala-v1.0-summarise` |
+| Follow-ups (shorten, expand…) | a general-purpose model |
 
 - The **Default** row is the fallback when a task does not define a connection.
 - A task left on **Default** uses the default connection.
@@ -143,6 +151,9 @@ OLLAMA_ORIGINS="*" ollama serve
 - **Summary length**: short, medium, detailed.
 - **Floating toolbar**: show or hide it, choose which actions appear.
 - **Automatic replacement**: replace field contents as soon as a task completes.
+- **Direct mode**: replace a field without opening the panel (no diff step).
+- **Surrounding context**: send the enclosing paragraph with the selection. Disabled by default
+  because it sends more text to the provider.
 - **Limits**: maximum selection size and maximum page size analyzed.
 
 ## Usage
@@ -150,7 +161,11 @@ OLLAMA_ORIGINS="*" ollama serve
 1. Select text: the toolbar appears above the selection.
 2. Click an action, or right-click and choose *Translate / Rephrase / Summarize…*.
 3. The result panel streams the answer:
-   - **Replace** (editable fields) replaces the selection, `Ctrl+Z` / `Cmd+Z` undoes it;
+   - **Follow-ups** refine the result: *Shorten*, *Expand*, *More formal*, *Bullet points*,
+     *Explain*, with *Back* to the previous result;
+   - **Replace** (editable fields) opens a before/after diff; **Confirm** applies it, and
+     `Ctrl+Z` / `Cmd+Z` undoes it;
+   - **Stop** interrupts a running generation and keeps the partial result;
    - **Copy** sends the result to the clipboard;
    - **Retry** runs the same request again;
    - the **close icon** — or `Esc` — closes the panel.
@@ -170,6 +185,8 @@ also handles pasted text.
 - Prompts and responses are not logged.
 - The Firefox manifest declares `websiteContent` data collection: the processed text is transmitted
   to the configured provider, and to that provider only.
+- The optional surrounding context sends the enclosing paragraph as well; it is disabled by default.
+- Results are processed in memory and are not stored by the extension.
 
 ## Known limitations
 

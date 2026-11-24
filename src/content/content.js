@@ -11,6 +11,7 @@
   const LILI = globalThis.LILI || {};
   const ACTIONS = LILI.ACTIONS || {};
   const REPLACEABLE = new Set(LILI.REPLACEABLE || []);
+  const FOLLOW_UPS = LILI.FOLLOW_UPS || [];
   const FALLBACK_ACTIONS = LILI.SELECTION_ACTIONS || ['translate', 'rephrase', 'summarize'];
 
   const MIN_SELECTION = 2;
@@ -34,6 +35,9 @@
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h11a3 3 0 0 1 3 3v1"/><path d="M15 5l3 3-3 3"/><path d="M20 16H9a3 3 0 0 1-3-3v-1"/><path d="M9 19l-3-3 3-3"/></svg>',
     retry:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4.5h-4.5"/></svg>',
+    stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+    compare:
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18"/><path d="M5 7h4M5 12h4M5 17h4M15 7h4M15 12h4M15 17h4"/></svg>',
     close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     settings:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>',
@@ -120,6 +124,7 @@
       statusText,
     ]);
     const body = node('div', { class: 'lili-body' }, [text, error, status]);
+    const followUps = node('div', { class: 'lili-followups', hidden: '' });
 
     const replaceBtn = actionButton('replace', 'replace', 'Remplacer', true);
     replaceBtn.hidden = true;
@@ -131,10 +136,22 @@
     const retryBtn = actionButton('retry', 'retry', 'Relancer');
     retryBtn.disabled = true;
 
+    const stopBtn = actionButton('stop', 'stop', 'Arrêter');
+    stopBtn.hidden = true;
+
+    const confirmBtn = actionButton('confirm', 'replace', 'Confirmer', true);
+    confirmBtn.hidden = true;
+
+    const cancelBtn = actionButton('cancel-compare', 'close', 'Annuler');
+    cancelBtn.hidden = true;
+
     const foot = node('div', { class: 'lili-foot' }, [
       replaceBtn,
       copyBtn,
       retryBtn,
+      stopBtn,
+      confirmBtn,
+      cancelBtn,
       node('span', { class: 'lili-kbd', text: 'Échap' }),
     ]);
 
@@ -147,7 +164,7 @@
     const panel = node(
       'div',
       { class: 'lili-panel', role: 'dialog', 'aria-label': 'Résultat Lili', hidden: '' },
-      [head, body, foot, resizeHandle]
+      [head, body, followUps, foot, resizeHandle]
     );
 
     const toast = node('div', { class: 'lili-toast', role: 'status', hidden: '' });
@@ -166,6 +183,10 @@
       replaceBtn,
       copyBtn,
       retryBtn,
+      stopBtn,
+      confirmBtn,
+      cancelBtn,
+      followUps,
     };
   }
 
@@ -229,6 +250,10 @@
       replaceBtn: parts.replaceBtn,
       copyBtn: parts.copyBtn,
       retryBtn: parts.retryBtn,
+      stopBtn: parts.stopBtn,
+      confirmBtn: parts.confirmBtn,
+      cancelBtn: parts.cancelBtn,
+      followUps: parts.followUps,
       toast: parts.toast,
     };
 
@@ -343,6 +368,46 @@
     }
   }
 
+  const CONTEXT_TAGS = new Set([
+    'P', 'LI', 'DIV', 'ARTICLE', 'SECTION', 'BLOCKQUOTE', 'TD', 'TH',
+    'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'FIGCAPTION', 'PRE',
+  ]);
+
+  function readContext(selection) {
+    if (!settings || !settings.ui || !settings.ui.context) return '';
+    try {
+      if (selection.kind === 'input') {
+        const value = selection.el.value || '';
+        const start = Math.max(0, selection.start - 700);
+        const end = Math.min(value.length, selection.end + 700);
+        return value.slice(start, end).trim().slice(0, 2000);
+      }
+
+      if (selection.range) {
+        let element = selection.range.startContainer;
+        if (element.nodeType === 3) element = element.parentElement;
+
+        while (element && element !== document.body && !CONTEXT_TAGS.has(element.tagName)) {
+          element = element.parentElement;
+        }
+
+        if (element && element !== document.body) {
+          const blockText = (element.innerText || element.textContent || '').trim();
+          if (blockText.length > selection.text.trim().length) {
+            return blockText.slice(0, 2000);
+          }
+        }
+
+        const root = selection.range.commonAncestorContainer;
+        const rootText = (root.textContent || '').trim();
+        if (rootText.length > selection.text.trim().length) return rootText.slice(0, 2000);
+      }
+    } catch {
+      /* ignore */
+    }
+    return '';
+  }
+
   function readSelection() {
     const active = document.activeElement;
     if (isTextField(active)) {
@@ -352,7 +417,7 @@
         const text = active.value.slice(start, end);
         if (text && text.trim().length >= 1) {
           const rect = active.getBoundingClientRect();
-          return {
+          const candidate = {
             kind: 'input',
             el: active,
             start,
@@ -360,6 +425,8 @@
             text,
             rect: rect && rect.height ? rect : null,
           };
+          candidate.context = readContext(candidate);
+          return candidate;
         }
       }
       return null;
@@ -378,13 +445,15 @@
 
     const rect = firstRect(range);
     const editable = findEditable(range.commonAncestorContainer);
-    return {
+    const candidate = {
       kind: editable ? 'contenteditable' : 'text',
       el: editable,
       range: range.cloneRange(),
       text,
       rect: rect || null,
     };
+    candidate.context = readContext(candidate);
+    return candidate;
   }
 
   function isReplaceable(selection) {
@@ -583,25 +652,34 @@
     ui.statusText.textContent = text;
   }
 
-  function resetPanel(action, anchor) {
+  function resetPanel(action, anchor, keepPosition) {
     ui.title.textContent = (ACTIONS[action] && ACTIONS[action].label) || action;
     ui.meta.textContent = '';
     ui.meta.title = '';
     delete ui.meta.dataset.direction;
+    ui.text.textContent = '';
+    ui.text.appendChild(ui.textNode);
     ui.textNode.data = '';
     ui.error.hidden = true;
     ui.error.textContent = '';
     ui.replaceBtn.hidden = true;
     ui.replaceBtn.disabled = true;
+    ui.confirmBtn.hidden = true;
+    ui.cancelBtn.hidden = true;
+    ui.stopBtn.hidden = false;
+    ui.copyBtn.hidden = false;
     ui.copyBtn.disabled = true;
+    ui.retryBtn.hidden = false;
     ui.retryBtn.disabled = true;
+    ui.followUps.hidden = true;
+    ui.followUps.textContent = '';
     ui.panel.classList.add('is-streaming');
     ui.body.scrollTop = 0;
     job = { action, text: '', stick: true };
     ui.panel.hidden = false;
     applyPanelSize();
     setStatus('Envoi de la demande…');
-    placePanel(anchor);
+    if (!keepPosition) placePanel(anchor);
   }
 
   function appendDelta(text) {
@@ -622,13 +700,60 @@
     }
   }
 
+  function setResultView() {
+    if (!ui || !job) return;
+    ui.text.textContent = '';
+    ui.text.appendChild(ui.textNode);
+    ui.textNode.data = job.text;
+  }
+
+  function renderFollowUps() {
+    if (!ui) return;
+    ui.followUps.textContent = '';
+
+    if (!job || !job.finished || !job.text.trim() || job.comparing) {
+      ui.followUps.hidden = true;
+      return;
+    }
+
+    if (job.previous) {
+      const back = actionButton('back', 'retry', 'Retour');
+      back.classList.add('lili-followup');
+      ui.followUps.appendChild(back);
+      ui.followUps.appendChild(node('span', { class: 'lili-sep' }));
+    }
+
+    for (const id of FOLLOW_UPS) {
+      const meta = ACTIONS[id];
+      if (!meta) continue;
+      const button = node('button', {
+        type: 'button',
+        class: 'lili-action lili-followup',
+        'data-followup': id,
+        title: meta.hint || meta.label,
+      });
+      button.textContent = meta.short || meta.label;
+      ui.followUps.appendChild(button);
+    }
+
+    ui.followUps.hidden = !ui.followUps.children.length;
+  }
+
+  function updateActionButtons(canReplace) {
+    ui.replaceBtn.hidden = !canReplace;
+    ui.replaceBtn.disabled = !canReplace || !job || !job.text.trim();
+    ui.copyBtn.hidden = false;
+    ui.copyBtn.disabled = !job || !job.text.trim();
+    ui.retryBtn.hidden = false;
+    ui.retryBtn.disabled = !lastRequest;
+  }
+
   function finishJob(info) {
     if (!ui || !job) return;
     job.finished = true;
     ui.panel.classList.remove('is-streaming');
+    ui.stopBtn.hidden = true;
     setStatus('');
-    ui.copyBtn.disabled = !job.text.trim();
-    ui.retryBtn.disabled = !lastRequest;
 
     if (info && info.model) {
       const direction = ui.meta.dataset.direction || '';
@@ -637,9 +762,21 @@
       ui.meta.title = [info.provider, info.model].filter(Boolean).join(' / ');
     }
 
-    const canReplace = lastRequest && isReplaceable(lastRequest.selection);
-    ui.replaceBtn.hidden = !canReplace;
-    ui.replaceBtn.disabled = !canReplace || !job.text.trim();
+    const canReplace = !!(lastRequest && isReplaceable(lastRequest.selection));
+    updateActionButtons(canReplace);
+
+    if (job.direct) {
+      if (canReplace && job.text.trim()) {
+        const ok = replaceSelection(lastRequest.selection, job.text.trim());
+        closePanel();
+        toast(ok ? 'Texte remplacé. Ctrl+Z pour annuler.' : 'Remplacement impossible.');
+      } else {
+        ui.panel.hidden = false;
+        job.direct = false;
+        renderFollowUps();
+      }
+      return;
+    }
 
     if (
       settings &&
@@ -653,19 +790,39 @@
       if (ok) {
         closePanel();
         toast('Texte remplacé. Ctrl+Z pour annuler.');
+        return;
       }
     }
+
+    renderFollowUps();
   }
 
   function failJob(message) {
     if (!ui || !job) return;
     job.finished = true;
+    job.comparing = false;
+
+    if (job.direct) {
+      job.direct = false;
+      ui.panel.hidden = false;
+    }
+
     ui.panel.classList.remove('is-streaming');
+    ui.stopBtn.hidden = true;
+    ui.followUps.hidden = true;
+    ui.confirmBtn.hidden = true;
+    ui.cancelBtn.hidden = true;
     setStatus('');
     ui.error.hidden = false;
     ui.error.textContent = message;
-    ui.retryBtn.disabled = !lastRequest;
+
+    const canReplace = !!(lastRequest && isReplaceable(lastRequest.selection)) && !!job.text.trim();
+    ui.replaceBtn.hidden = !canReplace;
+    ui.replaceBtn.disabled = !canReplace;
+    ui.copyBtn.hidden = false;
     ui.copyBtn.disabled = !job.text.trim();
+    ui.retryBtn.hidden = false;
+    ui.retryBtn.disabled = !lastRequest;
   }
 
   function closePanel() {
@@ -673,9 +830,37 @@
     abortJob();
     ui.panel.hidden = true;
     ui.error.hidden = true;
+    ui.confirmBtn.hidden = true;
+    ui.cancelBtn.hidden = true;
+    ui.stopBtn.hidden = true;
+    ui.followUps.hidden = true;
     ui.textNode.data = '';
     setStatus('');
     job = null;
+  }
+
+  function stopJob() {
+    if (!ui || !job || !job.port) return;
+
+    const port = job.port;
+    job.port = null;
+    job.finished = true;
+    job.stopped = true;
+
+    try {
+      port.postMessage({ type: 'abort' });
+      port.disconnect();
+    } catch {
+      /* ignore */
+    }
+
+    ui.panel.classList.remove('is-streaming');
+    ui.stopBtn.hidden = true;
+    setStatus('Génération arrêtée.');
+
+    const canReplace = !!(lastRequest && isReplaceable(lastRequest.selection));
+    updateActionButtons(canReplace);
+    renderFollowUps();
   }
 
   function abortJob() {
@@ -709,19 +894,39 @@
       text: isPage ? '' : selection.text,
       page: isPage ? extractPage() : null,
       context: { title: document.title, url: location.href },
-      selection: selection || null,
+      contextText: isPage ? '' : (selection && selection.context) || '',
+      selection: isPage ? null : selection || null,
       anchor: selection && selection.rect ? selection.rect : null,
     };
   }
 
-  function runRequest(request) {
+  function runRequest(request, options) {
     if (!request) return;
+    const opts = options || {};
     ensureUI();
     hideBar();
 
     const anchor = request.action === 'summarize_page' ? null : request.anchor;
-    resetPanel(request.action, anchor);
+    resetPanel(request.action, anchor, !!opts.keepPosition);
     lastRequest = request;
+    job.previous = opts.previous || null;
+    job.followUp = !!request.followUp;
+
+    const direct =
+      !opts.keepPosition &&
+      settings &&
+      settings.ui &&
+      settings.ui.directMode &&
+      request.action !== 'summarize_page' &&
+      request.selection &&
+      (request.selection.kind === 'input' || request.selection.kind === 'contenteditable') &&
+      REPLACEABLE.has(request.action);
+
+    if (direct) {
+      job.direct = true;
+      ui.panel.hidden = true;
+      toast('Traitement en cours…');
+    }
 
     if (request.action === 'summarize_page' && (!request.page || request.page.text.length < 150)) {
       failJob(
@@ -780,6 +985,7 @@
         text: request.text,
         page: request.page,
         context: request.context,
+        contextText: request.contextText || '',
       });
     } catch (error) {
       failJob('Envoi impossible : ' + (error && error.message ? error.message : ''));
@@ -789,6 +995,14 @@
   function onClick(event) {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
+
+    const followUpBtn = target.closest('[data-followup]');
+    if (followUpBtn) {
+      event.preventDefault();
+      event.stopPropagation();
+      startFollowUp(followUpBtn.getAttribute('data-followup'));
+      return;
+    }
 
     const actionBtn = target.closest('[data-action]');
     if (actionBtn) {
@@ -812,6 +1026,10 @@
     else if (kind === 'copy') doCopy();
     else if (kind === 'replace') doReplace();
     else if (kind === 'retry') doRetry();
+    else if (kind === 'stop') stopJob();
+    else if (kind === 'confirm') confirmReplace();
+    else if (kind === 'cancel-compare') cancelCompare();
+    else if (kind === 'back') restorePrevious();
     else if (kind === 'settings') {
       try {
         api.runtime.sendMessage({ type: 'lili:open-options' });
@@ -827,7 +1045,65 @@
     toast(ok ? 'Copié dans le presse-papiers.' : 'Copie impossible.');
   }
 
+  function renderDiff(before, after) {
+    let start = 0;
+    const maxStart = Math.min(before.length, after.length);
+    while (start < maxStart && before[start] === after[start]) start++;
+
+    let beforeEnd = before.length;
+    let afterEnd = after.length;
+    while (beforeEnd > start && afterEnd > start && before[beforeEnd - 1] === after[afterEnd - 1]) {
+      beforeEnd--;
+      afterEnd--;
+    }
+
+    const removed = before.slice(start, beforeEnd);
+    const added = after.slice(start, afterEnd);
+
+    ui.text.textContent = '';
+
+    if (!removed && !added) {
+      ui.text.appendChild(document.createTextNode('Aucune modification.'));
+      return;
+    }
+
+    const diff = node('div', { class: 'lili-diff' });
+    diff.appendChild(document.createTextNode(before.slice(0, start)));
+
+    if (removed) {
+      const del = document.createElement('del');
+      del.textContent = removed;
+      diff.appendChild(del);
+    }
+    if (added) {
+      const ins = document.createElement('ins');
+      ins.textContent = added;
+      diff.appendChild(ins);
+    }
+
+    diff.appendChild(document.createTextNode(before.slice(beforeEnd)));
+    ui.text.appendChild(diff);
+  }
+
   function doReplace() {
+    if (!ui || !job || !lastRequest || !job.text.trim()) return;
+    if (!isReplaceable(lastRequest.selection)) return;
+
+    job.comparing = true;
+    job.stick = false;
+    ui.followUps.hidden = true;
+    ui.replaceBtn.hidden = true;
+    ui.copyBtn.hidden = true;
+    ui.retryBtn.hidden = true;
+    ui.stopBtn.hidden = true;
+    ui.confirmBtn.hidden = false;
+    ui.cancelBtn.hidden = false;
+    ui.body.scrollTop = 0;
+    renderDiff(lastRequest.selection.text, job.text.trim());
+    setStatus('Vérifiez les modifications avant de remplacer.');
+  }
+
+  function confirmReplace() {
     if (!job || !lastRequest || !job.text.trim()) return;
     const ok = replaceSelection(lastRequest.selection, job.text.trim());
     if (ok) {
@@ -836,6 +1112,75 @@
     } else {
       toast('Remplacement impossible : le champ a peut-être changé.');
     }
+  }
+
+  function cancelCompare() {
+    if (!ui || !job) return;
+    job.comparing = false;
+    setResultView();
+    ui.confirmBtn.hidden = true;
+    ui.cancelBtn.hidden = true;
+    ui.copyBtn.hidden = false;
+    ui.retryBtn.hidden = false;
+    setStatus('');
+
+    const canReplace = !!(lastRequest && isReplaceable(lastRequest.selection));
+    updateActionButtons(canReplace);
+    renderFollowUps();
+  }
+
+  function startFollowUp(actionId) {
+    if (!ui || !job || !job.text.trim()) return;
+
+    const previous = {
+      action: job.action,
+      text: job.text,
+      meta: ui.meta.textContent,
+      direction: ui.meta.dataset.direction || '',
+      request: lastRequest,
+    };
+
+    const request = {
+      action: actionId,
+      text: job.text.trim(),
+      contextText: '',
+      page: null,
+      context: { title: document.title, url: location.href },
+      selection: lastRequest ? lastRequest.selection : null,
+      anchor: null,
+      followUp: true,
+    };
+
+    runRequest(request, { previous, keepPosition: true });
+  }
+
+  function restorePrevious() {
+    if (!ui || !job || !job.previous) return;
+
+    const previous = job.previous;
+    if (previous.request) lastRequest = previous.request;
+    job.action = previous.action;
+    job.text = previous.text;
+    job.previous = null;
+    job.finished = true;
+    job.comparing = false;
+
+    ui.title.textContent = (ACTIONS[job.action] && ACTIONS[job.action].label) || job.action;
+    ui.meta.textContent = previous.meta || '';
+    ui.meta.title = '';
+    if (previous.direction) ui.meta.dataset.direction = previous.direction;
+    else delete ui.meta.dataset.direction;
+
+    setResultView();
+    ui.confirmBtn.hidden = true;
+    ui.cancelBtn.hidden = true;
+    ui.copyBtn.hidden = false;
+    ui.retryBtn.hidden = false;
+    setStatus('');
+
+    const canReplace = !!(lastRequest && isReplaceable(lastRequest.selection));
+    updateActionButtons(canReplace);
+    renderFollowUps();
   }
 
   function doRetry() {

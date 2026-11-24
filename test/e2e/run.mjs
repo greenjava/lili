@@ -100,12 +100,20 @@ const SETTINGS = {
     fix: { connection: 'mock', model: '' },
     summarize: { connection: 'summary', model: 'mock-summary' },
     summarize_page: { connection: 'summary', model: 'mock-summary' },
+    refine: { connection: 'mock', model: '' },
   },
   language: { translateTarget: 'auto', output: 'fr' },
   rephrase: { tone: 'neutre' },
   summary: { length: 'moyen' },
   limits: { maxPageChars: 100000, maxSelectionChars: 20000, chunkChars: 1000, maxChunks: 8 },
-  ui: { toolbar: true, pageAction: true, autoReplace: false, actions: ['translate', 'rephrase', 'rephrase_translate', 'summarize', 'fix'] },
+  ui: {
+    toolbar: true,
+    pageAction: true,
+    autoReplace: false,
+    directMode: false,
+    context: false,
+    actions: ['translate', 'rephrase', 'rephrase_translate', 'summarize', 'fix'],
+  },
 };
 
 async function shadow(page, expr) {
@@ -277,7 +285,7 @@ async function main() {
       };
     });
     check('options : connexions affichées', filled.connections === 3, String(filled.connections));
-    check('options : une ligne par tâche', filled.routes === 7, String(filled.routes));
+    check('options : une ligne par tâche', filled.routes === 8, String(filled.routes));
     check('options : URL et modèle chargés', filled.base === API && filled.model === 'mock-1', JSON.stringify(filled));
     check(
       'options : routage chargé',
@@ -430,6 +438,17 @@ async function main() {
     check('remplacement : bouton proposé dans un champ', replaceVisible);
 
     await clickUi(demo, 'replace');
+    await demo.waitForFunction(
+      () => {
+        const root = document.getElementById('lili-root')?.shadowRoot;
+        return !!root?.querySelector('.lili-diff');
+      },
+      { timeout: 5000 }
+    );
+    const diffText = await shadow(demo, "root.querySelector('.lili-diff').textContent");
+    check('remplacement : diff affiché', diffText.includes('translated version'), diffText.slice(0, 80));
+
+    await clickUi(demo, 'confirm');
     await sleep(250);
     const fieldValue = await demo.$eval('#field', (el) => el.value);
     check('remplacement : valeur du textarea mise à jour', fieldValue === TRANSLATION, fieldValue);
@@ -443,6 +462,14 @@ async function main() {
     check('reformulation : contenu reçu', rephrased.includes('reformulation claire'), rephrased);
 
     await clickUi(demo, 'replace');
+    await demo.waitForFunction(
+      () => {
+        const root = document.getElementById('lili-root')?.shadowRoot;
+        return !!root?.querySelector('.lili-diff');
+      },
+      { timeout: 5000 }
+    );
+    await clickUi(demo, 'confirm');
     await sleep(250);
     const editableText = await demo.$eval('#editable', (el) => el.innerText.trim());
     check(
@@ -482,7 +509,89 @@ async function main() {
 
     await shot(demo, '04-panel-page-summary');
 
-    // 5. Remplacement automatique (option)
+    // 5. Follow-up actions
+    await shadow(demo, "root.querySelector('[data-followup=\"refine_shorter\"]').click()");
+    await waitResult(demo);
+    const refined = await panelText(demo);
+    check('suites : résultat affiné', refined.includes('REFINE-SHORTER'), refined);
+
+    await shadow(demo, "root.querySelector('[data-ui=\"back\"]').click()");
+    await sleep(150);
+    const restored = await panelText(demo);
+    check(
+      'suites : retour au résultat précédent',
+      restored.includes('RÉSUMÉ DE LA PAGE'),
+      restored.slice(0, 80)
+    );
+
+    // 6. Stop a running generation
+    await shadow(demo, "root.querySelector('[data-followup=\"refine_longer\"]').click()");
+    await demo.waitForFunction(
+      () => {
+        const root = document.getElementById('lili-root')?.shadowRoot;
+        return root?.querySelector('.lili-panel')?.classList.contains('is-streaming');
+      },
+      { timeout: 5000 }
+    );
+    await demo.waitForFunction(
+      () => {
+        const root = document.getElementById('lili-root')?.shadowRoot;
+        return (root?.querySelector('.lili-text')?.textContent.length || 0) > 30;
+      },
+      { timeout: 5000 }
+    );
+    await clickUi(demo, 'stop');
+    await sleep(200);
+    const stoppedStatus = await shadow(demo, "root.querySelector('.lili-status-text').textContent");
+    check('arrêt : génération stoppée', /arrêtée/i.test(stoppedStatus), stoppedStatus);
+    check('arrêt : panneau conservé', !(await shadow(demo, "root.querySelector('.lili-panel').hidden")));
+    await clickUi(demo, 'close');
+
+    // 7. Selection context
+    await options.evaluate(
+      (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
+      { ...SETTINGS, ui: { ...SETTINGS.ui, context: true } }
+    );
+    await sleep(400);
+    await demo.evaluate(() => {
+      const paragraph = document.getElementById('para');
+      const range = document.createRange();
+      range.setStart(paragraph.firstChild, 0);
+      range.setEnd(paragraph.firstChild, 40);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    });
+    await waitBar(demo);
+    await clickAction(demo, 'rephrase');
+    await waitResult(demo);
+    const contextResult = await panelText(demo);
+    check('contexte : paragraphe transmis', contextResult.startsWith('[CONTEXT]'), contextResult.slice(0, 60));
+    await clickUi(demo, 'close');
+
+    // 8. Direct mode
+    await options.evaluate(
+      (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
+      { ...SETTINGS, ui: { ...SETTINGS.ui, directMode: true } }
+    );
+    await sleep(400);
+    await demo.evaluate(() => {
+      document.getElementById('field').value = 'Bonjour, ceci est un texte à traduire.';
+    });
+    await selectTextarea(demo, 'field');
+    await waitBar(demo);
+    await clickAction(demo, 'translate');
+    await demo.waitForFunction(
+      () =>
+        document.getElementById('field').value ===
+        'OVH-TRANSLATION[French->English]: This is the translated version of your text.',
+      { timeout: 15000 }
+    );
+    const directPanelHidden = await shadow(demo, "root.querySelector('.lili-panel').hidden");
+    check('mode direct : champ remplacé sans panneau', directPanelHidden);
+
+    // 9. Remplacement automatique (option)
     await options.evaluate((settings) => {
       return new Promise((resolve) => chrome.storage.local.set({ settings }, resolve));
     }, { ...SETTINGS, ui: { ...SETTINGS.ui, autoReplace: true } });

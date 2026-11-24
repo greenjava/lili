@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Follow-up actions on any result: shorten, expand, make more formal, convert to bullet points or
+  explain, with a one-step back to the previous result.
+- Stop a running generation and keep the partial result.
+- Before/after diff before replacing a selection.
+- Optional surrounding-paragraph context for translations, rephrasings and corrections.
+- Direct replacement mode: replace editable fields without opening the result panel.
 - SHA256 checksums are published with each release.
 - Release notes are generated from this changelog.
 
