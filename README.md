@@ -26,6 +26,7 @@ OpenCode Zen/Go, OpenAI, Anthropic ou Ollama.
   (sélection courante, texte collé, ou page entière) et **raccourcis clavier**.
 - **Streaming** : la réponse s’affiche au fil de l’eau dans un panneau discret (shadow DOM, aucun
   conflit de style avec la page).
+- **Panneau déplaçable** en glissant son en-tête et **redimensionnable** par le coin inférieur droit.
 - **Remplacement direct** dans les `input`, `textarea` et zones `contenteditable` (bouton
   « Remplacer », ou automatique via une option). `Ctrl+Z` annule.
 - **Résumé de page en map-reduce** : le contenu principal est extrait, découpé, résumé section par
@@ -154,7 +155,10 @@ OLLAMA_ORIGINS="*" ollama serve
    - **Remplacer** (champ éditable) — remplace la sélection, `Ctrl+Z` pour annuler ;
    - **Copier** — presse-papiers ;
    - **Relancer** — relance la même demande ;
-   - **Fermer** (croix ou bouton en pied) — ferme le panneau, comme `Échap`.
+   - **Croix** — ferme le panneau, comme `Échap`.
+
+Le panneau se déplace en glissant son en-tête et se redimensionne par la poignée en bas à droite
+(la taille est conservée pour les résultats suivants).
 
 Le bouton **Page** de la barre, le popup et `Alt+Maj+S` lancent le résumé de la page. Le popup permet
 aussi de traiter un texte collé.

@@ -126,7 +126,14 @@ globalThis.LILI_STYLES = `
   gap: 8px;
   padding: 8px 10px 8px 12px;
   border-bottom: 1px solid var(--line);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
 }
+
+.lili-panel.is-dragging .lili-head { cursor: grabbing; }
+.lili-panel.is-dragging,
+.lili-panel.is-resizing { user-select: none; }
 
 .lili-title {
   flex: none;
@@ -226,8 +233,32 @@ globalThis.LILI_STYLES = `
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  padding: 8px 10px;
+  padding: 8px 22px 8px 10px;
   border-top: 1px solid var(--line);
+}
+
+.lili-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 2;
+}
+
+.lili-resize::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  border-bottom-right-radius: 3px;
+  opacity: 0.55;
 }
 
 .lili-action {

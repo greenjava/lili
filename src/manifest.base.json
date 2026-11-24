@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Lili — traduire, reformuler, résumer",
   "short_name": "Lili",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Traduis, reformule et résume la sélection ou la page entière, avec le modèle d'IA de ton choix.",
   "icons": {
     "16": "icons/icon-16.png",

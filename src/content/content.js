@@ -131,20 +131,23 @@
     const retryBtn = actionButton('retry', 'retry', 'Relancer');
     retryBtn.disabled = true;
 
-    const footerClose = actionButton('close', 'close', 'Fermer');
-
     const foot = node('div', { class: 'lili-foot' }, [
       replaceBtn,
       copyBtn,
       retryBtn,
       node('span', { class: 'lili-kbd', text: 'Échap' }),
-      footerClose,
     ]);
+
+    const resizeHandle = node('div', {
+      class: 'lili-resize',
+      'aria-hidden': 'true',
+      title: 'Redimensionner',
+    });
 
     const panel = node(
       'div',
       { class: 'lili-panel', role: 'dialog', 'aria-label': 'Résultat Lili', hidden: '' },
-      [head, body, foot]
+      [head, body, foot, resizeHandle]
     );
 
     const toast = node('div', { class: 'lili-toast', role: 'status', hidden: '' });
@@ -233,6 +236,10 @@
     ui.text.appendChild(ui.textNode);
 
     shadow.addEventListener('click', onClick);
+    ui.panel.addEventListener('pointerdown', onPanelPointerDown);
+    ui.panel.addEventListener('pointermove', onPanelPointerMove);
+    ui.panel.addEventListener('pointerup', onPanelPointerEnd);
+    ui.panel.addEventListener('pointercancel', onPanelPointerEnd);
     shadow.addEventListener('mousedown', (event) => {
       const target = event.target;
       if (target instanceof Element && target.closest('button')) event.preventDefault();
@@ -456,6 +463,116 @@
 
   // ------------------------------------------------------------------- panel
 
+  let panelSize = null;
+  let panelPointer = null;
+
+  function applyPanelSize() {
+    if (!ui) return;
+
+    if (!panelSize) {
+      ui.panel.style.width = '';
+      ui.panel.style.height = '';
+      ui.panel.style.maxHeight = '';
+      return;
+    }
+
+    const vw = document.documentElement.clientWidth || window.innerWidth;
+    const vh = window.innerHeight;
+    const width = Math.min(panelSize.width, Math.max(280, vw - 16));
+    const height = Math.min(panelSize.height, Math.max(160, vh - 16));
+
+    ui.panel.style.width = Math.round(width) + 'px';
+    ui.panel.style.height = Math.round(height) + 'px';
+    ui.panel.style.maxHeight = 'none';
+  }
+
+  function startPanelPointer(event, mode) {
+    const rect = ui.panel.getBoundingClientRect();
+    panelPointer = {
+      mode,
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
+
+    ui.panel.classList.add(mode === 'drag' ? 'is-dragging' : 'is-resizing');
+    try {
+      ui.panel.setPointerCapture(event.pointerId);
+    } catch {
+      /* ignore */
+    }
+    event.preventDefault();
+  }
+
+  function onPanelPointerDown(event) {
+    if (!ui || event.button !== 0) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+
+    if (target.closest('.lili-resize')) {
+      startPanelPointer(event, 'resize');
+      return;
+    }
+    if (target.closest('button, a, input, select, textarea')) return;
+    if (!target.closest('.lili-head')) return;
+
+    startPanelPointer(event, 'drag');
+  }
+
+  function onPanelPointerMove(event) {
+    if (!panelPointer || event.pointerId !== panelPointer.id) return;
+
+    const vw = document.documentElement.clientWidth || window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (panelPointer.mode === 'drag') {
+      const width = ui.panel.offsetWidth;
+      const left = clamp(
+        panelPointer.left + event.clientX - panelPointer.x,
+        8,
+        Math.max(8, vw - width - 8)
+      );
+      const top = clamp(
+        panelPointer.top + event.clientY - panelPointer.y,
+        8,
+        Math.max(8, vh - 48)
+      );
+      ui.panel.style.left = Math.round(left) + 'px';
+      ui.panel.style.top = Math.round(top) + 'px';
+    } else {
+      const minWidth = Math.min(300, vw - 16);
+      const minHeight = 160;
+      const maxWidth = Math.max(minWidth, vw - panelPointer.left - 8);
+      const maxHeight = Math.max(minHeight, vh - panelPointer.top - 8);
+
+      const width = clamp(panelPointer.width + event.clientX - panelPointer.x, minWidth, maxWidth);
+      const height = clamp(panelPointer.height + event.clientY - panelPointer.y, minHeight, maxHeight);
+
+      panelSize = { width: Math.round(width), height: Math.round(height) };
+      ui.panel.style.width = panelSize.width + 'px';
+      ui.panel.style.height = panelSize.height + 'px';
+      ui.panel.style.maxHeight = 'none';
+    }
+
+    event.preventDefault();
+  }
+
+  function onPanelPointerEnd(event) {
+    if (!panelPointer || event.pointerId !== panelPointer.id) return;
+
+    ui.panel.classList.remove('is-dragging', 'is-resizing');
+    try {
+      ui.panel.releasePointerCapture(event.pointerId);
+    } catch {
+      /* ignore */
+    }
+    panelPointer = null;
+  }
+
   function setStatus(text) {
     if (!ui) return;
     if (!text) {
@@ -482,6 +599,7 @@
     ui.body.scrollTop = 0;
     job = { action, text: '', stick: true };
     ui.panel.hidden = false;
+    applyPanelSize();
     setStatus('Envoi de la demande…');
     placePanel(anchor);
   }
