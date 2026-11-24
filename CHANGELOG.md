@@ -17,6 +17,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Direct replacement mode: replace editable fields without opening the result panel.
 - Local result history with favorites, restore and clear.
 - Per-site rules to disable the floating toolbar and force a translation target per domain.
+- Lightweight Markdown rendering for results (headings, lists, emphasis, inline code, quotes), with
+  an option to disable it.
 - SHA256 checksums are published with each release.
 - Release notes are generated from this changelog.
 

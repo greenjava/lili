@@ -39,6 +39,8 @@ intermediate server.
   browser profile.
 - **Per-site rules**: disable the floating toolbar on chosen domains and force a translation target
   (`domain = fr`).
+- **Lightweight Markdown rendering** for results: headings, lists, bold/italic, inline code and
+  quotes. Copy and replace always use the raw text; rendering can be disabled in the settings.
 - **In-place replacement** in `input`, `textarea` and `contenteditable` fields, with undo
   (`Ctrl+Z` / `Cmd+Z`) and an optional automatic replacement mode.
 - **Page summaries with map-reduce**: the main content is extracted, split into sections, summarized
@@ -59,6 +61,10 @@ intermediate server.
 Local history, available from the clock icon in the result panel:
 
 ![History](docs/historique.png)
+
+Page summaries are rendered with lightweight Markdown:
+
+![Page summary](docs/resume.png)
 
 > Screenshots show the French interface. The extension UI is currently in French; generated text
 > follows the language settings.
@@ -164,6 +170,7 @@ OLLAMA_ORIGINS="*" ollama serve
   because it sends more text to the provider.
 - **Sites**: disable the floating toolbar per domain and force a translation target
   (`domain = fr` / `domain = en`).
+- **Markdown**: interpret headings, lists and emphasis in results.
 - **Limits**: maximum selection size and maximum page size analyzed.
 
 ## Usage

@@ -700,6 +700,7 @@
     ui.meta.title = '';
     delete ui.meta.dataset.direction;
     ui.text.textContent = '';
+    ui.text.classList.remove('is-markdown');
     ui.text.appendChild(ui.textNode);
     ui.textNode.data = '';
     ui.error.hidden = true;
@@ -747,11 +748,178 @@
     }
   }
 
+  function appendInline(parent, text, depth) {
+    if (depth > 2) {
+      parent.appendChild(document.createTextNode(text));
+      return;
+    }
+
+    const patterns = [
+      { re: /\*\*([^*\n]+)\*\*/, tag: 'strong' },
+      { re: /__([^_\n]+)__/, tag: 'strong' },
+      { re: /`([^`\n]+)`/, tag: 'code' },
+      { re: /\*([^*\n]+)\*/, tag: 'em' },
+      { re: /(?<!\w)_([^_\n]+)_(?!\w)/, tag: 'em' },
+    ];
+
+    let rest = String(text || '');
+
+    while (rest) {
+      let best = null;
+
+      for (const pattern of patterns) {
+        const match = pattern.re.exec(rest);
+        if (match && (!best || match.index < best.index)) {
+          best = {
+            index: match.index,
+            length: match[0].length,
+            inner: match[1],
+            tag: pattern.tag,
+          };
+        }
+      }
+
+      if (!best) {
+        parent.appendChild(document.createTextNode(rest));
+        return;
+      }
+
+      if (best.index > 0) {
+        parent.appendChild(document.createTextNode(rest.slice(0, best.index)));
+      }
+
+      const element = document.createElement(best.tag);
+      appendInline(element, best.inner, depth + 1);
+      parent.appendChild(element);
+      rest = rest.slice(best.index + best.length);
+    }
+  }
+
+  function renderMarkdown(text) {
+    const fragment = document.createDocumentFragment();
+    const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
+    let paragraph = [];
+    let list = null;
+
+    const flushParagraph = () => {
+      if (!paragraph.length) return;
+      const element = document.createElement('p');
+      appendInline(element, paragraph.join(' '));
+      fragment.appendChild(element);
+      paragraph = [];
+    };
+
+    const flushList = () => {
+      if (!list) return;
+      fragment.appendChild(list.element);
+      list = null;
+    };
+
+    let index = 0;
+
+    while (index < lines.length) {
+      const line = lines[index];
+
+      if (/^\s*```/.test(line)) {
+        flushParagraph();
+        flushList();
+        const code = [];
+        index++;
+        while (index < lines.length && !/^\s*```/.test(lines[index])) {
+          code.push(lines[index]);
+          index++;
+        }
+        index++;
+        const pre = document.createElement('pre');
+        const codeEl = document.createElement('code');
+        codeEl.textContent = code.join('\n');
+        pre.appendChild(codeEl);
+        fragment.appendChild(pre);
+        continue;
+      }
+
+      if (!line.trim()) {
+        flushParagraph();
+        flushList();
+        index++;
+        continue;
+      }
+
+      const heading = line.match(/^(#{1,6})\s+(.*)$/);
+      if (heading) {
+        flushParagraph();
+        flushList();
+        const element = document.createElement('h' + heading[1].length);
+        appendInline(element, heading[2]);
+        fragment.appendChild(element);
+        index++;
+        continue;
+      }
+
+      if (/^\s*(---+|\*\*\*+|___+)\s*$/.test(line)) {
+        flushParagraph();
+        flushList();
+        fragment.appendChild(document.createElement('hr'));
+        index++;
+        continue;
+      }
+
+      const quote = line.match(/^\s*>\s?(.*)$/);
+      if (quote) {
+        flushParagraph();
+        flushList();
+        const element = document.createElement('blockquote');
+        appendInline(element, quote[1]);
+        fragment.appendChild(element);
+        index++;
+        continue;
+      }
+
+      const bullet = line.match(/^\s*[-*+]\s+(.*)$/);
+      const ordered = line.match(/^\s*\d+[.)]\s+(.*)$/);
+
+      if (bullet || ordered) {
+        flushParagraph();
+        const type = bullet ? 'ul' : 'ol';
+        if (!list || list.type !== type) {
+          flushList();
+          list = { type, element: document.createElement(type) };
+        }
+        const item = document.createElement('li');
+        appendInline(item, (bullet || ordered)[1]);
+        list.element.appendChild(item);
+        index++;
+        continue;
+      }
+
+      flushList();
+      paragraph.push(line.trim());
+      index++;
+    }
+
+    flushParagraph();
+    flushList();
+    return fragment;
+  }
+
   function setResultView() {
     if (!ui || !job) return;
+
+    const scroll = ui.body.scrollTop;
     ui.text.textContent = '';
-    ui.text.appendChild(ui.textNode);
     ui.textNode.data = job.text;
+
+    const markdown = !settings || !settings.ui || settings.ui.markdown !== false;
+
+    if (markdown && job.text.trim()) {
+      ui.text.classList.add('is-markdown');
+      ui.text.appendChild(renderMarkdown(job.text));
+    } else {
+      ui.text.classList.remove('is-markdown');
+      ui.text.appendChild(ui.textNode);
+    }
+
+    ui.body.scrollTop = scroll;
   }
 
   function renderFollowUps() {
@@ -829,6 +997,8 @@
       }
       return;
     }
+
+    setResultView();
 
     if (
       settings &&
@@ -920,6 +1090,7 @@
 
     const canReplace = !!(lastRequest && isReplaceable(lastRequest.selection));
     updateActionButtons(canReplace);
+    setResultView();
     renderFollowUps();
   }
 
@@ -1047,7 +1218,7 @@
       open.appendChild(
         node('span', {
           class: 'lili-history-preview',
-          text: entry.text.replace(/\s+/g, ' ').slice(0, 140),
+          text: entry.text.replace(/[#*_`>]/g, '').replace(/\s+/g, ' ').slice(0, 140),
         })
       );
       item.appendChild(open);
@@ -1367,6 +1538,7 @@
     const added = after.slice(start, afterEnd);
 
     ui.text.textContent = '';
+    ui.text.classList.remove('is-markdown');
 
     if (!removed && !added) {
       ui.text.appendChild(document.createTextNode('Aucune modification.'));

@@ -24,12 +24,12 @@ const MOCK = {
     '- Il n’ajoute aucune information.',
   page:
     'SUMMARY-FROM-B\n' +
-    'RÉSUMÉ DE LA PAGE\n' +
+    '## RÉSUMÉ DE LA PAGE\n' +
     'Cette page de démonstration sert à valider le résumé automatique.\n\n' +
     '- Elle contient plusieurs sections pour déclencher le traitement par morceaux.\n' +
     '- Le modèle factice renvoie des notes intermédiaires, puis une synthèse.\n' +
     '- Le résultat s’affiche dans le panneau flottant.\n\n' +
-    'À retenir : le flux complet fonctionne, du clic jusqu’au panneau.',
+    '**À retenir** : le flux complet fonctionne, du clic jusqu’au panneau.',
   notes: '- Note factuelle : le texte décrit une procédure de test.\n- Chiffre clé : 42.',
   test: 'OK',
   refineShorter: 'REFINE-SHORTER: Version courte du texte.',

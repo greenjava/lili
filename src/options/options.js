@@ -87,7 +87,14 @@
     rephrase: { tone: 'neutre' },
     summary: { length: 'moyen' },
     limits: { maxSelectionChars: 20000, maxPageChars: 120000 },
-    ui: { toolbar: true, autoReplace: false, directMode: false, context: false, actions: [] },
+    ui: {
+      toolbar: true,
+      autoReplace: false,
+      directMode: false,
+      context: false,
+      markdown: true,
+      actions: [],
+    },
     siteRules: { disabled: [], targets: {} },
   };
 
@@ -205,6 +212,7 @@
     $('#autoReplace').checked = !!state.ui.autoReplace;
     $('#directMode').checked = !!state.ui.directMode;
     $('#context').checked = !!state.ui.context;
+    $('#markdown').checked = state.ui.markdown !== false;
     $('#sitesDisabled').value = (state.siteRules.disabled || []).join('\n');
     $('#sitesTargets').value = Object.entries(state.siteRules.targets || {})
       .map(([host, target]) => host + ' = ' + target)
@@ -234,6 +242,7 @@
       autoReplace: $('#autoReplace').checked,
       directMode: $('#directMode').checked,
       context: $('#context').checked,
+      markdown: $('#markdown').checked,
       actions: actions.length ? actions : LILI.SELECTION_ACTIONS,
     };
     state.siteRules = {

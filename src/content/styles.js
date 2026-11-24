@@ -187,6 +187,65 @@ globalThis.LILI_STYLES = `
   font-size: 13px;
 }
 
+.lili-text.is-markdown { white-space: normal; }
+.lili-text.is-markdown p { margin: 0 0 6px; }
+.lili-text.is-markdown p:last-child { margin-bottom: 0; }
+
+.lili-text.is-markdown h1,
+.lili-text.is-markdown h2,
+.lili-text.is-markdown h3,
+.lili-text.is-markdown h4,
+.lili-text.is-markdown h5,
+.lili-text.is-markdown h6 {
+  margin: 10px 0 4px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.lili-text.is-markdown h1 { font-size: 15px; }
+.lili-text.is-markdown h2 { font-size: 14px; }
+.lili-text.is-markdown h3 { font-size: 13px; }
+
+.lili-text.is-markdown ul,
+.lili-text.is-markdown ol {
+  margin: 0 0 6px;
+  padding-left: 18px;
+}
+
+.lili-text.is-markdown li { margin: 2px 0; }
+
+.lili-text.is-markdown code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--soft);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+}
+
+.lili-text.is-markdown pre {
+  margin: 6px 0;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--soft);
+  overflow-x: auto;
+}
+
+.lili-text.is-markdown pre code { padding: 0; background: none; }
+
+.lili-text.is-markdown blockquote {
+  margin: 6px 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+}
+
+.lili-text.is-markdown hr {
+  margin: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
 .lili-panel.is-streaming .lili-text::after {
   content: "";
   display: inline-block;

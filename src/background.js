@@ -61,6 +61,7 @@ const DEFAULT_SETTINGS = {
     autoReplace: false,
     directMode: false,
     context: false,
+    markdown: true,
     actions: ['translate', 'rephrase', 'rephrase_translate', 'summarize', 'fix'],
   },
   siteRules: { disabled: [], targets: {} },

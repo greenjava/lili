@@ -498,6 +498,20 @@ async function main() {
     check('résumé de page : synthèse reçue', pageSummary.includes('RÉSUMÉ DE LA PAGE'), pageSummary.slice(0, 120));
     check('résumé de page : sections traitées', /section/.test(await panelMeta(demo)), await panelMeta(demo));
 
+    const markdownShape = await shadow(demo, `(() => {
+      const text = root.querySelector('.lili-text');
+      return {
+        headings: text.querySelectorAll('h2').length,
+        items: text.querySelectorAll('ul li').length,
+        strong: text.querySelectorAll('strong').length,
+      };
+    })()`);
+    check(
+      'markdown : titres, listes et gras',
+      markdownShape.headings >= 1 && markdownShape.items >= 3 && markdownShape.strong >= 1,
+      JSON.stringify(markdownShape)
+    );
+
     const geometry = await shadow(
       demo,
       "(() => { const r = root.querySelector('.lili-panel').getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, vh: innerHeight, vw: innerWidth }; })()"

@@ -24,6 +24,8 @@ configured API; there is no backend.
 - Content scripts cannot use imports either. Load order is defined in the manifest:
   `shared/constants.js`, `content/styles.js`, `content/content.js`.
 - Build UI nodes with DOM APIs. Never assign dynamic values to `innerHTML`.
+- The Markdown renderer is node-based: it may create headings, lists, emphasis, code and quotes, but
+  never interprets raw HTML.
 - Keep the result-panel UI inside its shadow root with `adoptedStyleSheets`.
 - Never log, persist or transmit API keys anywhere except `chrome.storage.local`.
 - Do not add telemetry, analytics or remote logging.
@@ -82,7 +84,7 @@ then stream the merged summary.
   summary: { length },
   limits: { maxPageChars, maxSelectionChars, chunkChars, maxChunks },
   siteRules: { disabled: [host], targets: { host: 'fr' } },
-  ui: { toolbar, pageAction, autoReplace, directMode, context, actions }
+  ui: { toolbar, pageAction, autoReplace, directMode, context, markdown, actions }
 }
 ```
 
@@ -91,7 +93,8 @@ then stream the merged summary.
   `refine_explain`. Follow-ups all route through `routing.refine` and operate on the current result,
   not on the page selection.
 - `ui.directMode` replaces editable fields without showing the panel. `ui.context` sends the
-  enclosing paragraph with the request (off by default).
+  enclosing paragraph with the request (off by default). `ui.markdown` toggles lightweight Markdown
+  rendering; copy and replace always use the raw text.
 - `siteRules.disabled` disables the floating toolbar on matching hosts (suffix match);
   `siteRules.targets` forces the translation target for a host.
 - Results are stored in `history` (local only): 50 non-favorite entries plus favorites. The panel

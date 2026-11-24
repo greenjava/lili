@@ -39,6 +39,9 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
   le profil du navigateur.
 - **Règles par site** : désactiver la barre flottante sur certains domaines et forcer une langue
   cible (`domaine = fr`).
+- **Rendu Markdown léger** des résultats : titres, listes, gras/italique, code inline et citations.
+  Copier et Remplacer utilisent toujours le texte brut ; le rendu peut être désactivé dans les
+  réglages.
 - **Remplacement sur place** dans les champs `input`, `textarea` et `contenteditable`, avec annulation
   (`Ctrl+Z` / `Cmd+Z`) et un mode de remplacement automatique optionnel.
 - **Résumé de page en map-reduce** : le contenu principal est extrait, découpé en sections, résumé
@@ -61,6 +64,10 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
 Historique local, accessible par l’icône horloge du panneau de résultat :
 
 ![Historique](docs/historique.png)
+
+Les résumés de page sont rendus avec un Markdown léger :
+
+![Résumé de page](docs/resume.png)
 
 ## Installation
 
@@ -168,6 +175,7 @@ OLLAMA_ORIGINS="*" ollama serve
   car cela transmet plus de texte au fournisseur.
 - **Sites** : désactiver la barre flottante par domaine et forcer une langue cible
   (`domaine = fr` / `domaine = en`).
+- **Markdown** : interpréter les titres, listes et emphases des résultats.
 - **Limites** : taille maximale d’une sélection et taille maximale d’une page analysée.
 
 ## Utilisation
