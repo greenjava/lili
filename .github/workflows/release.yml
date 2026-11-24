@@ -63,11 +63,19 @@ jobs:
           fi
           CHROME_PATH="$CHROME_PATH" npm run test:e2e
 
+      - name: Generate checksums
+        run: cd dist && sha256sum lili-chrome.zip lili-firefox.zip > SHA256SUMS
+
+      - name: Build release notes
+        run: npm run release:notes
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v3
         with:
+          body_path: dist/release-notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
             dist/lili-chrome.zip
             dist/lili-firefox.zip
-          generate_release_notes: true
+            dist/SHA256SUMS
           fail_on_unmatched_files: true

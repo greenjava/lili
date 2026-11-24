@@ -273,23 +273,38 @@ onglets ouverts.
 
 ### Publier une version
 
+1. Réglez la version dans les deux fichiers et ajoutez la section correspondante dans
+   [CHANGELOG.md](CHANGELOG.md) :
+
 ```bash
-# 1. même version dans package.json et src/manifest.base.json
-# 2. commit sur dev, puis merge dans main
+npm run version:set -- 0.3.1
+# éditer CHANGELOG.md : déplacer les entrées de Unreleased vers [0.3.1] avec la date
+npm run check
+```
+
+2. Commitez sur `dev`, fusionnez dans `main`, puis taguez :
+
+```bash
 git switch dev
-# ... modifier, committer, pousser
+git add -A && git commit -m "🔖 release 0.3.1"
+git push
 git switch main
 git merge dev
 git push origin main
-
-# 3. tag sur le commit de main
 git tag v0.3.1
 git push origin v0.3.1
 ```
 
-Le workflow échoue si le tag n’est pas sur `main` ou si les versions diffèrent. La publication sur le
-Chrome Web Store et addons.mozilla.org n’est pas automatisée (identifiants et revue nécessaires) ;
-les archives de la release sont prêtes à être téléversées.
+Le workflow vérifie que le tag appartient à `main`, que la version correspond et que `CHANGELOG.md`
+contient une section pour ce tag. Il reconstruit ensuite, lance le lint et la suite de bout en bout,
+puis publie une GitHub Release avec :
+
+- `lili-chrome.zip` et `lili-firefox.zip` ;
+- `SHA256SUMS`, vérifiable avec `sha256sum -c SHA256SUMS` ;
+- les notes de release issues de la section correspondante de `CHANGELOG.md`.
+
+La publication sur le Chrome Web Store et addons.mozilla.org reste manuelle : téléversez les zips de
+la release (une XPI signée par Mozilla est nécessaire pour une installation permanente de Firefox).
 
 ## Conventions
 

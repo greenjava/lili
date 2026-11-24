@@ -265,23 +265,37 @@ After a change, run `npm run build` and reload the extension: the **Reload** but
 
 ### Publishing a version
 
+1. Set the version in both files and add the matching [CHANGELOG.md](CHANGELOG.md) section:
+
 ```bash
-# 1. same version in package.json and src/manifest.base.json
-# 2. commit on dev, merge into main
+npm run version:set -- 0.3.1
+# edit CHANGELOG.md: move entries from Unreleased to [0.3.1] with the date
+npm run check
+```
+
+2. Commit on `dev`, merge into `main`, then tag:
+
+```bash
 git switch dev
-# ... edit, commit, push
+git add -A && git commit -m "🔖 release 0.3.1"
+git push
 git switch main
 git merge dev
 git push origin main
-
-# 3. tag the main commit
 git tag v0.3.1
 git push origin v0.3.1
 ```
 
-The workflow fails if the tag is not on `main` or if the versions differ. Publishing to the Chrome
-Web Store and addons.mozilla.org is not automated (it needs credentials and review); the release
-archives are ready to upload.
+The release workflow verifies that the tag belongs to `main`, that the version matches, and that
+`CHANGELOG.md` has a section for the tag. It then rebuilds, runs lint and the end-to-end suite, and
+publishes a GitHub Release with:
+
+- `lili-chrome.zip` and `lili-firefox.zip`;
+- `SHA256SUMS`, verifiable with `sha256sum -c SHA256SUMS`;
+- release notes taken from the matching `CHANGELOG.md` section.
+
+Publishing to the Chrome Web Store and addons.mozilla.org is still manual: upload the zips from the
+release (a Mozilla-signed XPI is required for a permanent Firefox install).
 
 ## Conventions
 

@@ -17,7 +17,11 @@ function walk(dir, out = []) {
   return out;
 }
 
-const files = [...walk(srcDir), ...walk(path.join(root, 'test', 'e2e'))];
+const files = [
+  ...walk(srcDir),
+  ...walk(path.join(root, 'scripts')),
+  ...walk(path.join(root, 'test', 'e2e')),
+];
 let failed = 0;
 
 for (const file of files.filter((f) => f.endsWith('.js'))) {

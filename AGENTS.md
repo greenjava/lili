@@ -45,9 +45,12 @@ src/shared/constants.js  action metadata shared by content, popup and options
 src/options/             connections, per-task routing, settings page
 src/popup/               quick actions popup
 src/manifest.base.json   shared manifest; chrome/firefox files are merged over it
+CHANGELOG.md             Keep a Changelog sections per version, used as release notes
 scripts/build.mjs        dist/chrome + dist/firefox (+ zips), copies LICENSE
-scripts/check.mjs        node --check on src + test/e2e, JSON validation
+scripts/check.mjs        node --check on src + scripts + test/e2e, JSON validation
 scripts/verify-version.mjs  package.json vs manifest vs tag
+scripts/bump-version.mjs    set the version in package.json and manifest.base.json
+scripts/release-notes.mjs   extract the CHANGELOG section for the current tag
 scripts/make-icons.py    PNG icons (Pillow)
 test/e2e/                Chrome harness, two fake providers, demo page
 .github/workflows/       CI (dev/main/PR) and release (tags v*)
@@ -161,10 +164,13 @@ the options page. Set `E2E_ARTIFACTS=1` to write screenshots to `test/e2e/artifa
 
 - `main` is stable; `dev` is the integration branch. Develop on `dev` or short-lived branches.
 - Commits follow Gitmoji: one emoji, imperative English subject, factual bullet body.
-- Version lives in **both** `package.json` and `src/manifest.base.json`; keep them equal.
+- Version lives in **both** `package.json` and `src/manifest.base.json`; change it with
+  `npm run version:set -- X.Y.Z` and keep them equal.
+- Every user-visible change gets an entry in `CHANGELOG.md` under `Unreleased`. At release time, move
+  those entries into a `## [X.Y.Z] - YYYY-MM-DD` section; the release fails without it.
 - Releases are tags `v*` on a commit of `main`, with a version matching the files. Pushing such a tag
-  triggers `.github/workflows/release.yml`, which re-runs lint and the e2e suite before publishing
-  the zips.
+  triggers `.github/workflows/release.yml`, which re-runs lint and the e2e suite, extracts the
+  changelog section, generates `SHA256SUMS`, and publishes the zips.
 - CI runs on `dev`, `main` and pull requests; do not merge with a red CI.
 
 ## Known traps
@@ -191,4 +197,5 @@ the options page. Set `E2E_ARTIFACTS=1` to write screenshots to `test/e2e/artifa
 - `npm run lint:firefox` reports 0 errors and 0 warnings.
 - `npm test` passes (or the e2e suite was run manually with Chrome).
 - User-visible changes are documented in both READMEs, with refreshed screenshots when relevant.
+- User-visible changes have a `CHANGELOG.md` entry under `Unreleased`.
 - The working tree has no generated files staged.

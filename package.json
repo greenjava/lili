@@ -12,7 +12,9 @@
     "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors",
     "test:e2e": "node scripts/build.mjs --zip && node test/e2e/run.mjs",
     "test": "npm run check && npm run test:e2e",
-    "verify:version": "node scripts/verify-version.mjs"
+    "verify:version": "node scripts/verify-version.mjs",
+    "version:set": "node scripts/bump-version.mjs",
+    "release:notes": "node scripts/release-notes.mjs"
   },
   "engines": {
     "node": ">=20.11"
