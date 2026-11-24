@@ -1,324 +1,298 @@
 # Lili
 
-Extension Chrome / Firefox pour traiter du texte sans quitter la page : **traduire**, **reformuler**,
-**reformuler + traduire**, **résumer** une sélection, **corriger** un texte, ou **résumer la page
-entière**.
+**English** · [Français](README.fr.md)
 
-Un seul code source, deux manifests générés. Aucun serveur intermédiaire : l’extension appelle
-directement l’API du fournisseur choisi. **Chaque tâche peut utiliser une connexion et un modèle
-différents** : OVHcloud Olala pour traduire et résumer, OpenRouter pour choisir un modèle par usage,
-OpenCode Zen/Go, OpenAI, Anthropic ou Ollama.
+Lili is a browser extension for Chrome and Firefox that handles text without leaving the page:
+translate, rephrase, rewrite and translate, summarize a selection, fix a text, or summarize a whole
+page.
 
-![Barre flottante](docs/barre.png)
+Each task can use its own provider and model — for example OVHcloud Olala for translation and
+summaries, OpenRouter for a specific model per use case, OpenCode Zen or Go, OpenAI, Anthropic, or a
+local Ollama instance. Requests go straight from the browser to the selected API; there is no
+intermediate server.
 
-## Fonctionnalités
+![Floating toolbar](docs/barre.png)
 
-| Action | Sur une sélection | Sur un champ texte | Raccourci |
+## Features
+
+| Action | On a selection | In a text field | Shortcut |
 | --- | --- | --- | --- |
-| Traduire (FR ↔ EN auto) | oui | **remplace sur place** | `Alt+Maj+T` |
-| Reformuler (ton réglable) | oui | **remplace sur place** | `Alt+Maj+R` |
-| Reformuler puis traduire | oui | **remplace sur place** | — |
-| Résumer | oui | panneau de résultat | `Alt+Maj+D` |
-| Corriger orthographe / grammaire | oui | **remplace sur place** | — |
-| Résumer la page entière | — | — | `Alt+Maj+S` |
+| Translate (FR ↔ EN auto) | yes | **replaces in place** | `Alt+Shift+T` |
+| Rephrase (adjustable tone) | yes | **replaces in place** | `Alt+Shift+R` |
+| Rephrase then translate | yes | **replaces in place** | — |
+| Summarize | yes | result panel | `Alt+Shift+D` |
+| Fix spelling and grammar | yes | **replaces in place** | — |
+| Summarize the whole page | — | — | `Alt+Shift+S` |
 
-- **Barre flottante** près de la sélection, **menu contextuel** (clic droit), **popup** de l’extension
-  (sélection courante, texte collé, ou page entière) et **raccourcis clavier**.
-- **Streaming** : la réponse s’affiche au fil de l’eau dans un panneau discret (shadow DOM, aucun
-  conflit de style avec la page).
-- **Panneau déplaçable** en glissant son en-tête et **redimensionnable** par le coin inférieur droit.
-- **Remplacement direct** dans les `input`, `textarea` et zones `contenteditable` (bouton
-  « Remplacer », ou automatique via une option). `Ctrl+Z` annule.
-- **Résumé de page en map-reduce** : le contenu principal est extrait, découpé, résumé section par
-  section, puis fusionné. Les pages longues ne sont pas tronquées silencieusement.
-- **Détection de langue FR/EN** pour la traduction automatique (`auto`), ou langue cible imposée.
-- **Routage par tâche** : une connexion et un modèle par action, avec connexion de repli.
-- **Modèles listés automatiquement** depuis chaque service (OpenRouter, OpenCode, OVHcloud…),
-  mis en cache et proposés dans des menus déroulants.
-- Interface et prompts en français, **clair / sombre**, réglages complets.
+- **Floating toolbar** near the selection, **context menu** (right click), **popup** (current
+  selection, pasted text, or whole page) and **keyboard shortcuts**.
+- **Streaming output** in a compact result panel built with a shadow root, so page styles never
+  interfere.
+- **In-place replacement** in `input`, `textarea` and `contenteditable` fields, with undo
+  (`Ctrl+Z` / `Cmd+Z`) and an optional automatic replacement mode.
+- **Page summaries with map-reduce**: the main content is extracted, split into sections, summarized
+  section by section, then merged. Long pages are not silently truncated.
+- **Per-task routing**: one connection and one model per action, with a fallback connection.
+- **Automatic model lists** fetched from each provider, cached for seven days, with a manual refresh.
+- **FR/EN language detection** for automatic translation, or a fixed target language.
+- Result panel can be **dragged** by its header and **resized** from the bottom-right grip.
 
-| Panneau de résultat | Routage par tâche |
+| Result panel | Per-task routing |
 | --- | --- |
-| ![Panneau](docs/panneau.png) | ![Routage](docs/routage.png) |
+| ![Result panel](docs/panneau.png) | ![Per-task routing](docs/routage.png) |
 
-| Réglages | Popup |
+| Connections | Popup |
 | --- | --- |
-| ![Réglages](docs/reglages.png) | ![Popup](docs/popup.png) |
+| ![Connections](docs/reglages.png) | ![Popup](docs/popup.png) |
+
+> Screenshots show the French interface. The extension UI is currently in French; generated text
+> follows the language settings.
 
 ## Installation
 
-### Chrome / Edge / Brave
+### Chrome, Edge and Brave (116+)
 
-```bash
-npm run build
-```
+1. Download `lili-chrome.zip` from the Releases page of this repository and unzip it.
+2. Open `chrome://extensions` and enable **Developer mode**.
+3. Click **Load unpacked** and select the unzipped folder.
+4. Pin the extension, then open **Options** (right click on the icon → Options).
 
-1. Ouvre `chrome://extensions`.
-2. Active **Mode développeur**.
-3. **Charger l’extension non empaquetée** → choisis `dist/chrome`.
-4. Épingle l’icône, puis ouvre les **Réglages** (clic droit sur l’icône → Options).
+### Firefox (142+)
 
-> `npm run build:zip` produit aussi `dist/lili-chrome.zip` pour le Chrome Web Store.
+1. Download `lili-firefox.zip` from the Releases page and unzip it.
+2. Open `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on** and select `manifest.json` from the unzipped folder.
 
-### Firefox
-
-1. Ouvre `about:debugging#/runtime/this-firefox`.
-2. **Charger un module temporaire** → choisis `dist/firefox/manifest.json`.
-3. Les réglages s’ouvrent au premier lancement.
-
-Le chargement temporaire disparaît au redémarrage ; pour un usage durable, passe par
-`about:addons` → roue dentée → **Installer un module depuis un fichier** avec le `.zip`
-(`npm run build:zip`) signé par Mozilla, ou charge le dossier via un profil de développement.
+A temporary add-on is removed when Firefox restarts. For a permanent installation, the package must
+be signed by Mozilla and installed through `about:addons` or distributed on addons.mozilla.org.
 
 ## Configuration
 
-Lili sépare **les connexions** (où appeler : type d’API, URL, clé) et **le routage** (quel modèle
-pour quelle tâche).
+Lili separates **connections** (where to call: API type, URL, key) from **routing** (which model to
+use for which task).
 
-### 1. Ajouter des connexions
+### 1. Add connections
 
-Réglages → **Connexions** → choisir un préréglage → **Ajouter la connexion**.
+Open **Options → Connections**, choose a preset and click **Add connection**.
 
-| Préréglage | URL de base | Modèles (exemples) |
+| Preset | Base URL | Example models |
 | --- | --- | --- |
 | OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini`, … |
-| OpenRouter | `https://openrouter.ai/api/v1` | des centaines (`openai/gpt-4o-mini`, …) |
+| OpenRouter | `https://openrouter.ai/api/v1` | hundreds of models (`openai/gpt-4o-mini`, …) |
 | OVHcloud AI Endpoints | `https://oai.endpoints.kepler.ai.cloud.ovh.net/v1` | `Olala-v1.0-translate`, `Olala-v1.0-summarise`, … |
 | OpenCode Zen | `https://opencode.ai/zen/v1` | `deepseek-v4-flash`, … |
 | OpenCode Go | `https://opencode.ai/inference/go/openai/v1` | `kimi-k3`, … |
 | Anthropic | `https://api.anthropic.com` | `claude-3-5-haiku-latest`, … |
-| Ollama (local) | `http://localhost:11434` | modèles installés |
-| Personnalisé | — | Mistral, Groq, vLLM, LiteLLM… |
+| Ollama (local) | `http://localhost:11434` | installed models |
+| Custom | — | Mistral, Groq, vLLM, LiteLLM… |
 
-Pour chaque connexion : clé API, modèle par défaut, puis **Tester**. Les listes de modèles sont
-récupérées automatiquement à l’ouverture des réglages (cache de 7 jours) et proposées dans des menus
-déroulants ; **Charger les modèles** force un rafraîchissement et « Autre modèle… » permet une
-saisie libre. À l’enregistrement, le navigateur demande l’accès aux hôtes concernés — nécessaire
-pour contourner CORS.
+For each connection, set the API key and the default model, then use **Test** to check the endpoint.
+Model lists are fetched automatically when the options page opens (cached for seven days) and shown
+in dropdowns; **Load models** forces a refresh and **Other model…** allows a manual model ID. When
+the options are saved, the browser asks for network access to the configured hosts — this is needed
+to bypass CORS restrictions.
 
-Les listes viennent de `GET {base}/models` (OpenAI-compatible), `GET /v1/models` (Anthropic) et
-`GET /api/tags` (Ollama). Les bases OpenCode `/openai/v1` sont converties en `/v1/models`. Si la
-liste est refusée avec la clé (401/403) mais publique sans authentification — cas d’OVHcloud — Lili
-réessaie sans clé. Les modèles non conversationnels (TTS, Whisper, embeddings, images) sont filtrés.
+Model lists come from `GET {base}/models` (OpenAI-compatible), `GET /v1/models` (Anthropic) and
+`GET /api/tags` (Ollama). OpenCode `/openai/v1` bases are converted to `/v1/models`. If a provider
+rejects the key (401/403) but exposes a public catalog — as OVHcloud does — Lili retries without
+authentication. Non-chat models (TTS, Whisper, embeddings, images) are filtered out.
 
-### 2. Router les tâches
+### 2. Route tasks
 
-**Modèles par tâche** associe une connexion et un modèle à chaque action :
+**Options → Models per task** assigns a connection and a model to each action:
 
-| Tâche | Exemple |
+| Task | Example |
 | --- | --- |
-| Traduction | OVHcloud · `Olala-v1.0-translate` |
-| Reformuler + traduire | OpenRouter · un modèle généraliste |
-| Reformulation | OpenRouter · … |
-| Correction | … |
-| Résumé de sélection | OVHcloud · `Olala-v1.0-summarise` |
-| Résumé de page | OVHcloud · `Olala-v1.0-summarise` |
+| Translate | OVHcloud · `Olala-v1.0-translate` |
+| Rephrase then translate | OpenRouter · a general-purpose model |
+| Rephrase | OpenRouter · … |
+| Fix | … |
+| Summarize selection | OVHcloud · `Olala-v1.0-summarise` |
+| Summarize page | OVHcloud · `Olala-v1.0-summarise` |
 
-- Ligne **Par défaut** : connexion de repli quand une tâche n’en définit pas.
-- Connexion laissée sur « Par défaut » : la connexion par défaut est utilisée.
-- Modèle vide : le modèle par défaut de la connexion est utilisé.
+- The **Default** row is the fallback when a task does not define a connection.
+- A task left on **Default** uses the default connection.
+- An empty model uses the default model of the selected connection.
 
-### Modèles dédiés
+### Dedicated models
 
-- **`Olala-v1.0-translate`** (OVHcloud) est un modèle de traduction seul. Lili le détecte et envoie
-  `source_language` / `target_language` en anglais, sans prompt système. Son contexte de 8k tokens
-  limite la sélection à **12 000 caractères** (message explicite au-delà). Sur « Reformuler +
-  traduire », il traduit sans reformuler.
-- **`Olala-v1.0-summarise`** : chat classique, contexte large, adapté aux résumés de page.
-- **OpenCode Zen / Go** : utiliser `chat/completions`. Les modèles gratuits réservés au client
-  OpenCode renvoient 403 ailleurs ; prendre un modèle payant ou un abonnement Go. L’en-tête de
-  session exigé par Go est ajouté automatiquement.
-- **OpenRouter** : `HTTP-Referer` / `X-Title` sont optionnels ; Lili envoie `X-Title: Lili`.
+- **`Olala-v1.0-translate`** (OVHcloud) is a translation-only model. Lili detects it and sends
+  `source_language` / `target_language` in English, without a system prompt. Its 8k-token context
+  limits a selection to **12,000 characters** (with an explicit error beyond that). On
+  “Rephrase then translate”, it translates without rephrasing.
+- **`Olala-v1.0-summarise`** is a regular chat model with a large context, suited to page summaries.
+- **OpenCode Zen and Go** use `chat/completions`. Free models reserved for the OpenCode client
+  return 403 elsewhere; use a paid model or a Go subscription. The session header required by Go is
+  added automatically.
+- **OpenRouter** accepts optional `HTTP-Referer` / `X-Title` headers; Lili sends `X-Title: Lili`.
 
-**Ollama** : autorise l’origine de l’extension, sinon la requête est refusée :
+### Ollama
+
+Ollama must allow the extension origin, otherwise requests are rejected:
 
 ```bash
 OLLAMA_ORIGINS="*" ollama serve
 ```
 
-### Réglages utiles
+### Settings
 
-- **Routage** : connexion et modèle par tâche, plus une connexion de repli.
-- **Traduction** : `FR ↔ EN automatique`, `Toujours vers le français`, `Toujours vers l’anglais`.
-- **Langue des résumés** : français ou anglais.
-- **Ton** de la reformulation : neutre, professionnel, décontracté, académique.
-- **Longueur** du résumé : court, moyen, détaillé.
-- **Barre flottante** : afficher/masquer, choisir les actions proposées.
-- **Remplacement automatique** : remplace le texte du champ dès la fin du traitement.
-- **Limites** : taille maximale d’une sélection et d’une page analysée.
+- **Routing**: connection and model per task, plus a fallback connection.
+- **Translation target**: automatic FR ↔ EN, always French, or always English.
+- **Summary language**: French or English.
+- **Rephrase tone**: neutral, professional, casual, academic.
+- **Summary length**: short, medium, detailed.
+- **Floating toolbar**: show or hide it, choose which actions appear.
+- **Automatic replacement**: replace field contents as soon as a task completes.
+- **Limits**: maximum selection size and maximum page size analyzed.
 
-## Utilisation
+## Usage
 
-1. Sélectionne du texte : la barre apparaît au-dessus.
-2. Clique une action (ou clic droit → *Traduire / Reformuler / Résumer…*).
-3. Le panneau affiche le résultat en streaming :
-   - **Remplacer** (champ éditable) — remplace la sélection, `Ctrl+Z` pour annuler ;
-   - **Copier** — presse-papiers ;
-   - **Relancer** — relance la même demande ;
-   - **Croix** — ferme le panneau, comme `Échap`.
+1. Select text: the toolbar appears above the selection.
+2. Click an action, or right-click and choose *Translate / Rephrase / Summarize…*.
+3. The result panel streams the answer:
+   - **Replace** (editable fields) replaces the selection, `Ctrl+Z` / `Cmd+Z` undoes it;
+   - **Copy** sends the result to the clipboard;
+   - **Retry** runs the same request again;
+   - the **close icon** — or `Esc` — closes the panel.
 
-Le panneau se déplace en glissant son en-tête et se redimensionne par la poignée en bas à droite
-(la taille est conservée pour les résultats suivants).
+Drag the panel by its header to move it, and resize it from the grip in the bottom-right corner. The
+chosen size is kept for the next results.
 
-Le bouton **Page** de la barre, le popup et `Alt+Maj+S` lancent le résumé de la page. Le popup permet
-aussi de traiter un texte collé.
+The **Page** button in the toolbar, the popup and `Alt+Shift+S` summarize the current page. The popup
+also handles pasted text.
 
-## Architecture
+## Privacy
 
-```
-src/
-├── manifest.base.json       # commun
-├── manifest.chrome.json     # service worker MV3
-├── manifest.firefox.json    # event page + gecko id
-├── background.js            # stockage, menus, raccourcis, streaming, prompts, map-reduce
-├── shared/constants.js      # métadonnées des actions (labels, icônes)
-├── content/
-│   ├── content.js           # sélection, barre, panneau, extraction, remplacement
-│   └── styles.js            # CSS injecté via adoptedStyleSheets (shadow DOM)
-├── options/                 # page de réglages
-└── popup/                   # popup de l’extension
-scripts/
-├── build.mjs                # dist/chrome + dist/firefox (+ zip)
-├── check.mjs                # syntaxe JS + JSON
-├── verify-version.mjs       # versions package/manifest/tag
-└── make-icons.py            # icônes PNG
-test/e2e/
-├── run.mjs                  # scénario Chrome (37 assertions)
-├── mock.mjs                 # deux faux fournisseurs OpenAI
-└── demo.html
-.github/workflows/
-├── ci.yml                   # checks + lint + e2e
-└── release.yml              # release sur tag v*
-```
+- Selected text is sent only to the provider configured for the task, at the moment an action is
+  triggered.
+- No telemetry, no analytics, no account, no server operated by the project.
+- API keys are stored in `chrome.storage.local` (the browser profile), never in the source code.
+- Prompts and responses are not logged.
+- The Firefox manifest declares `websiteContent` data collection: the processed text is transmitted
+  to the configured provider, and to that provider only.
 
-**Flux d’une action** : le content script capture la sélection → ouvre un port
-`lili-stream` → le background construit le prompt, appelle l’API en SSE et renvoie les deltas → le
-panneau les affiche. Le remplacement se fait dans la page, avec les références DOM conservées au
-moment de la sélection.
+## Known limitations
 
-Points techniques :
+- `input` and `contenteditable` fields inside a page shadow DOM are not detected.
+- Canvas-based editors (Google Docs, some web IDEs) do not expose their selection.
+- Iframes do not get the floating toolbar; the context menu still works through the selected text
+  (without in-place replacement).
+- Browser-internal pages, native PDF viewers and extension stores cannot be scripted.
+- Language detection is a FR/EN heuristic; other languages require a fixed target.
+- Very long pages are summarized over the first `maxChunks` sections (8 by default).
+- Dedicated translation models (`Olala-v1.0-translate`) accept up to 12,000 characters per
+  selection.
+- Free OpenCode models are reserved for the OpenCode client and return 403 from the extension.
 
-- Aucun bundler et aucune dépendance à l’exécution : les scripts sont chargés tels quels. Les
-  `devDependencies` ne servent qu’aux tests et au packaging.
-- Le background est un script classique, compatible `service_worker` (Chrome) et `scripts`
-  (Firefox).
-- L’UI vit dans un shadow root : pas de fuite CSS, pas de blocage par la CSP du site
-  (`adoptedStyleSheets`).
-- Le stockage contient `connections` (type, URL, clé, modèle) et `routing` (connexion + modèle par
-  action) ; l’ancien format à fournisseur unique est migré automatiquement.
-- Le service worker est maintenu éveillé pendant les appels longs (keepalive + watchdog 90 s).
-- Les erreurs HTTP sont traduites en messages actionnables (401, 404, 429, réseau, délai).
+## Troubleshooting
 
-## Développement
+| Symptom | What to check |
+| --- | --- |
+| “Access denied (401)” | Invalid or expired API key; also check the base URL. |
+| “Cannot reach the API” | Wrong URL, service down, or host permission refused: save the settings again and accept the browser prompt. |
+| “Endpoint or model not found (404)” | For OpenAI-compatible APIs the base URL usually ends with `/v1`; check the model ID. |
+| Ollama network error | Restart Ollama with `OLLAMA_ORIGINS="*"`. |
+| “No model defined for this task” | Set a default model on the connection or pick a model in the routing table. |
+| Model list fails on OVHcloud | The catalog is public but rejects invalid tokens; Lili retries without a key. Reload the extension if the error persists. |
+| “400 source_language / target_language” | A dedicated translation model is used for a non-translation task. |
+| “403” with OpenCode | Free models are reserved for the OpenCode client: use a paid model or Go. |
+| No toolbar on a page | Browser page, PDF, selection inside an iframe, or the toolbar is disabled in the settings. |
+| Nothing happens after reloading the extension | Reload the tab: content scripts are not injected into already open pages. |
+
+## Development
+
+Requirements: Node.js 20.11 or later; Python with Pillow for icon generation; Chrome for the
+end-to-end tests.
 
 ```bash
-npm ci                # dépendances de test (puppeteer-core, web-ext)
-npm run icons         # régénère les icônes PNG (Pillow)
-npm run check         # node --check + validation JSON
-npm run build         # dist/chrome + dist/firefox
-npm run build:zip     # + dist/lili-chrome.zip et dist/lili-firefox.zip
-npm run lint:firefox  # addons-linter (warnings = erreurs)
+npm ci                # test and packaging dependencies
+npm run icons         # regenerate the PNG icons
+npm run check         # JS/MJS syntax and JSON validation
+npm run build         # dist/chrome and dist/firefox
+npm run build:zip     # plus dist/lili-chrome.zip and dist/lili-firefox.zip
+npm run lint:firefox  # addons-linter, warnings treated as errors
 npm run verify:version
-npm test              # check + e2e Chrome
+npm test              # checks + Chrome end-to-end tests
 ```
 
-Tests de bout en bout (Chrome requis) :
+End-to-end tests need Chrome:
 
 ```bash
 npx @puppeteer/browsers install chrome@stable --path .cache/chrome
 CHROME_PATH=$(find .cache/chrome -type f -name chrome | head -n 1) npm run test:e2e
 ```
 
-Le harness démarre deux faux fournisseurs OpenAI, charge l’extension dans Chrome, puis vérifie le
-routage par tâche, les modèles OVH, le streaming, le remplacement, les résumés, le popup, le
-déplacement et le redimensionnement du panneau (37 assertions).
+The harness starts two fake OpenAI providers, loads the extension in Chrome and checks per-task
+routing, OVHcloud model handling, streaming, replacement, summaries, the popup, and panel dragging
+and resizing (37 assertions).
 
-Après une modification, relance `npm run build` puis :
-- Chrome : icône **Recharger** dans `chrome://extensions` ;
-- Firefox : **Recharger** dans `about:debugging`.
+Project layout:
 
-## Confidentialité
+```
+src/
+├── manifest.base.json       # shared manifest
+├── manifest.chrome.json     # MV3 service worker
+├── manifest.firefox.json    # event page, gecko id, data collection
+├── background.js            # settings, menus, shortcuts, streaming, prompts, map-reduce
+├── shared/constants.js      # action metadata
+├── content/                 # selection, toolbar, panel, extraction, replacement
+├── options/                 # connections, routing, settings
+└── popup/                   # quick actions
+scripts/
+├── build.mjs                # dist/chrome + dist/firefox (+ zip)
+├── check.mjs                # syntax and JSON checks
+├── verify-version.mjs       # package/manifest/tag versions
+└── make-icons.py            # PNG icons
+test/e2e/                    # Chrome harness, fake providers, demo page
+.github/workflows/           # CI and release
+```
 
-- Le texte sélectionné n’est envoyé qu’au fournisseur configuré, au moment où tu déclenches une
-  action.
-- Aucune télémétrie, aucun serveur maison, aucun compte.
-- La clé API est stockée dans `chrome.storage.local` (profil du navigateur), jamais dans le code.
-- Le manifeste Firefox déclare la collecte `websiteContent` : le texte traité est transmis au
-  fournisseur que tu as configuré, et à lui seul.
-- Les prompts et les réponses ne sont pas journalisés.
+After a change, run `npm run build` and reload the extension: the **Reload** button in
+`chrome://extensions`, or **Reload** in `about:debugging` for Firefox. Reload any open tab as well.
 
-## Limites connues
+## CI and release
 
-- Les `input` / `contenteditable` situés **dans un shadow DOM** de la page ne sont pas détectés.
-- Éditeurs sur canvas (Google Docs, certains IDE web) : la sélection n’est pas accessible.
-- Les **iframes** n’ont pas la barre flottante ; le menu contextuel y fonctionne via le texte de
-  sélection (sans remplacement).
-- Pages internes du navigateur, PDF natifs et Chrome Web Store : injection interdite par le
-  navigateur.
-- La détection de langue est une heuristique FR/EN ; les autres langues doivent utiliser une cible
-  fixe.
-- Les très longues pages sont résumées sur les `maxChunks` premières sections (8 par défaut).
-- Modèles de traduction dédiés (`Olala-v1.0-translate`) : 12 000 caractères maximum par sélection.
-- Modèles gratuits OpenCode : réservés au client OpenCode, 403 depuis l’extension.
+- `.github/workflows/ci.yml` runs on every push to `dev` and `main` and on pull requests: static
+  checks, packaging, Firefox lint, then Chrome for Testing and the end-to-end suite. Packages and
+  test screenshots are uploaded as artifacts.
+- `.github/workflows/release.yml` runs on tags matching `v*`. It checks that the tag belongs to
+  `main` and that `package.json`, `src/manifest.base.json` and the tag share the same version, then
+  rebuilds, re-runs the tests and publishes a **GitHub Release** with `lili-chrome.zip` and
+  `lili-firefox.zip`.
 
-## Dépannage
-
-| Symptôme | Piste |
-| --- | --- |
-| « Accès refusé (401) » | Clé API invalide ou expirée ; vérifie aussi l’URL de base. |
-| « Impossible de joindre l’API » | URL erronée, service arrêté, ou autorisation d’hôte refusée : ré-enregistre les réglages et accepte la demande du navigateur. |
-| « Endpoint ou modèle introuvable (404) » | L’URL de base doit pointer sur `…/v1` (OpenAI-compatible) ; vérifie le nom du modèle. |
-| Ollama répond une erreur réseau | Relance Ollama avec `OLLAMA_ORIGINS="*"`. |
-| « 400 source_language / target_language » | Modèle de traduction dédié utilisé sur une autre tâche que la traduction. |
-| « 403 » avec OpenCode | Modèle gratuit réservé au client OpenCode : choisis un modèle payant ou Go. |
-| Un modèle est refusé après changement de connexion | Vérifie la ligne de routage correspondante et recharge les réglages. |
-| « Impossible de lister les modèles » sur OVHcloud | La liste est publique mais refusée avec un token invalide : Lili réessaie sans clé. Si l’erreur persiste, recharge l’extension, puis vérifie l’accès réseau à l’hôte. |
-| Pas de barre sur une page | Page interne/PDF, sélection dans une iframe, ou barre désactivée dans les réglages. |
-| Rien ne se passe après un rechargement d’extension | Recharge l’onglet : les content scripts ne sont pas réinjectés à chaud. |
-
-## CI et release
-
-- `.github/workflows/ci.yml` — sur chaque push `dev` / `main` et chaque pull request :
-  `npm run check`, build des deux paquets, `web-ext lint`, installation de Chrome for Testing puis
-  `npm run test:e2e`. Les captures du test sont publiées en artefact.
-- `.github/workflows/release.yml` — sur un tag `v*` : vérifie que le tag pointe sur un commit de
-  `main`, que `package.json`, `src/manifest.base.json` et le tag ont la même version, reconstruit,
-  relint, puis crée une **GitHub Release** avec `lili-chrome.zip` et `lili-firefox.zip`.
-
-### Publier une version
+### Publishing a version
 
 ```bash
-# 1. même version dans package.json et src/manifest.base.json
-# 2. commit sur dev, puis merge dans main
+# 1. same version in package.json and src/manifest.base.json
+# 2. commit on dev, merge into main
 git switch dev
-# ... modifier, committer, pousser
+# ... edit, commit, push
 git switch main
 git merge dev
 git push origin main
 
-# 3. tag sur le commit de main
+# 3. tag the main commit
 git tag v0.3.1
 git push origin v0.3.1
 ```
 
-Le workflow échoue si le tag n’est pas sur `main` ou si les versions divergent. La publication sur
-le Chrome Web Store et addons.mozilla.org n’est pas automatisée (secrets et revue nécessaires) :
-les zips de la release sont prêts à être téléversés.
+The workflow fails if the tag is not on `main` or if the versions differ. Publishing to the Chrome
+Web Store and addons.mozilla.org is not automated (it needs credentials and review); the release
+archives are ready to upload.
 
-## Conventions de développement
+## Conventions
 
-- Branches : `main` = stable (releases) ; `dev` = développement et intégration.
-- Commits : convention **Gitmoji**, sujet à l’impératif en anglais, corps factuel en puces.
-- Code et commentaires en anglais, commentaires courts ; interface, prompts et documentation en
-  français.
+- Branches: `main` is stable (releases); `dev` is used for development and integration.
+- Commits follow **Gitmoji**, with an imperative English subject and a factual bullet-point body.
+- Code and comments are in English, with short comments; the interface and prompts are in French.
+  Documentation is provided in English (`README.md`) and French (`README.fr.md`).
 
-## Licence
+## License
 
-Lili est distribué sous **Mozilla Public License 2.0** (`MPL-2.0`). Voir [LICENSE](LICENSE).
+Lili is distributed under the **Mozilla Public License 2.0** (`MPL-2.0`). See [LICENSE](LICENSE).
 
-En résumé : utilisation, modification et redistribution libres. Le copyleft est **au niveau
-fichier** : si tu modifies un fichier couvert puis le redistribues, sa version modifiée doit rester
-sous MPL ; tu peux combiner Lili avec du code sous d’autres licences, y compris propriétaire. La
-licence inclut une concession de brevets et n’accorde aucun droit sur les marques. Le code source
-correspondant est ce dépôt ; le fichier de licence est inclus dans les paquets Chrome et Firefox
-générés.
+In short: use, modification and redistribution are allowed. Copyleft applies **per file**: if a
+covered file is modified and redistributed, its modified source must remain under the MPL. Lili can
+be combined with code under other licenses, including proprietary code. The license includes a
+patent grant and grants no trademark rights. The corresponding source is this repository, and the
+license file is included in the generated Chrome and Firefox packages.
