@@ -21,5 +21,6 @@
     "@puppeteer/browsers": "^3.2.7",
     "puppeteer-core": "^25.18.1",
     "web-ext": "^10.8.0"
-  }
+  },
+  "license": "MPL-2.0"
 }

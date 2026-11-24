@@ -59,6 +59,8 @@ for (const [name, override] of Object.entries(TARGETS)) {
   const dest = path.join(distDir, name);
   mkdirSync(dest, { recursive: true });
   copySources(dest);
+  const license = path.join(root, 'LICENSE');
+  if (existsSync(license)) cpSync(license, path.join(dest, 'LICENSE'));
 
   const manifest = { ...base, ...override };
   writeFileSync(path.join(dest, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');

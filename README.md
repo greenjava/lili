@@ -314,4 +314,11 @@ les zips de la release sont prêts à être téléversés.
 
 ## Licence
 
-Usage personnel. Adapte et réutilise librement.
+Lili est distribué sous **Mozilla Public License 2.0** (`MPL-2.0`). Voir [LICENSE](LICENSE).
+
+En résumé : utilisation, modification et redistribution libres. Le copyleft est **au niveau
+fichier** : si tu modifies un fichier couvert puis le redistribues, sa version modifiée doit rester
+sous MPL ; tu peux combiner Lili avec du code sous d’autres licences, y compris propriétaire. La
+licence inclut une concession de brevets et n’accorde aucun droit sur les marques. Le code source
+correspondant est ce dépôt ; le fichier de licence est inclus dans les paquets Chrome et Firefox
+générés.
