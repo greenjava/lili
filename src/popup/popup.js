@@ -5,8 +5,6 @@
   const api = globalThis.browser || globalThis.chrome;
   const LILI = globalThis.LILI || { ACTIONS: {}, SELECTION_ACTIONS: [] };
 
-  const PROVIDERS = { openai: 'OpenAI', anthropic: 'Anthropic', ollama: 'Ollama' };
-
   const $ = (selector) => document.querySelector(selector);
   const previewEl = $('#selection-preview');
   const countEl = $('#selection-count');
@@ -117,9 +115,13 @@
     try {
       const settings = await api.runtime.sendMessage({ type: 'lili:get-settings' });
       if (settings) {
-        const provider = settings.provider;
-        const model = settings.providers && settings.providers[provider] && settings.providers[provider].model;
-        $('#provider').textContent = [PROVIDERS[provider] || provider, model].filter(Boolean).join(' · ');
+        const fallback = settings.fallback || {};
+        const connections = settings.connections || [];
+        const connection =
+          connections.find((item) => item.id === fallback.connection) || connections[0] || null;
+        const label = (connection && (connection.label || connection.id)) || '';
+        const model = (connection && connection.model) || fallback.model || '';
+        $('#provider').textContent = [label, model].filter(Boolean).join(' · ') || 'Aucune connexion';
       }
     } catch {
       /* popup still works */

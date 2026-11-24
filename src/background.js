@@ -10,25 +10,28 @@ const TIMEOUT_MS = 90000;
 const TEST_TIMEOUT_MS = 20000;
 
 const LANG_NAMES = { fr: 'français', en: 'anglais' };
+const ENGLISH_LANG = { fr: 'French', en: 'English' };
+const DEDICATED_TRANSLATION_MAX_CHARS = 12000;
 
 const DEFAULT_SETTINGS = {
-  provider: 'openai',
-  providers: {
-    openai: {
+  connections: [
+    {
+      id: 'openai',
+      label: 'OpenAI',
+      type: 'openai',
       baseUrl: 'https://api.openai.com/v1',
       apiKey: '',
       model: 'gpt-4o-mini',
     },
-    anthropic: {
-      baseUrl: 'https://api.anthropic.com',
-      apiKey: '',
-      model: 'claude-3-5-haiku-latest',
-    },
-    ollama: {
-      baseUrl: 'http://localhost:11434',
-      apiKey: '',
-      model: 'llama3.1:8b',
-    },
+  ],
+  fallback: { connection: 'openai', model: '' },
+  routing: {
+    translate: { connection: '', model: '' },
+    rephrase_translate: { connection: '', model: '' },
+    rephrase: { connection: '', model: '' },
+    fix: { connection: '', model: '' },
+    summarize: { connection: '', model: '' },
+    summarize_page: { connection: '', model: '' },
   },
   language: { translateTarget: 'auto', output: 'fr' },
   rephrase: { tone: 'neutre' },
@@ -83,9 +86,6 @@ function endpoint(baseUrl, path) {
   return base + path;
 }
 
-function providerLabel(provider) {
-  return PROVIDER_LABELS[provider] || provider;
-}
 
 function chunkText(text, size) {
   const chunks = [];
@@ -115,7 +115,8 @@ function abortError() {
 
 async function getSettings() {
   const stored = await api.storage.local.get('settings');
-  return deepMerge(DEFAULT_SETTINGS, (stored && stored.settings) || {});
+  const raw = migrateSettings((stored && stored.settings) || {});
+  return deepMerge(DEFAULT_SETTINGS, raw);
 }
 
 async function saveSettings(incoming) {
@@ -123,6 +124,109 @@ async function saveSettings(incoming) {
   const next = deepMerge(current, incoming || {});
   await api.storage.local.set({ settings: next });
   return next;
+}
+
+/** Convert the old single-provider settings to connections + routing. */
+function migrateSettings(raw) {
+  if (!raw || typeof raw !== 'object') return {};
+  if (Array.isArray(raw.connections)) return raw;
+  if (!raw.providers) return raw;
+
+  const connections = [];
+  for (const key of ['openai', 'anthropic', 'ollama']) {
+    const provider = raw.providers[key];
+    if (!provider) continue;
+    connections.push({
+      id: key,
+      label: PROVIDER_LABELS[key] || key,
+      type: key === 'anthropic' ? 'anthropic' : key === 'ollama' ? 'ollama' : 'openai',
+      baseUrl: provider.baseUrl || '',
+      apiKey: provider.apiKey || '',
+      model: provider.model || '',
+    });
+  }
+
+  const chosen = connections.find((c) => c.id === raw.provider) || connections[0] || null;
+  const rest = { ...raw };
+  delete rest.provider;
+  delete rest.providers;
+
+  return {
+    ...rest,
+    connections,
+    fallback: { connection: chosen ? chosen.id : '', model: chosen ? chosen.model : '' },
+  };
+}
+
+function connectionLabel(connection) {
+  return (connection && (connection.label || connection.id)) || 'connexion';
+}
+
+function findConnection(settings, id) {
+  if (!id) return null;
+  return (settings.connections || []).find((c) => c.id === id) || null;
+}
+
+/** Resolve the connection and model for one action. */
+function resolveRoute(action, settings) {
+  const connections = settings.connections || [];
+  if (!connections.length) {
+    throw new Error('Aucune connexion configurée. Ouvre les réglages de Lili pour en ajouter une.');
+  }
+
+  const route = (settings.routing && settings.routing[action]) || {};
+  const fallback = settings.fallback || {};
+  const routeConnection = findConnection(settings, route.connection);
+  const fallbackConnection = findConnection(settings, fallback.connection);
+  const connection = routeConnection || fallbackConnection || connections[0];
+
+  // An explicit route keeps its own connection's model as fallback.
+  const model = routeConnection
+    ? route.model || routeConnection.model
+    : route.model || fallback.model || connection.model;
+
+  if (!model) {
+    throw new Error(
+      'Aucun modèle défini pour cette tâche (' + connectionLabel(connection) + '). Ouvre les réglages de Lili.'
+    );
+  }
+  return { connection, model };
+}
+
+function isLocalHost(url) {
+  const host = hostOf(url);
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host === '[::1]' ||
+    host.endsWith('.local')
+  );
+}
+
+function validateConnection(connection) {
+  if (!connection) throw new Error('Aucune connexion configurée.');
+  if (!String(connection.baseUrl || '').trim()) {
+    throw new Error('URL de base manquante pour ' + connectionLabel(connection) + '.');
+  }
+
+  // Local servers (vLLM, LiteLLM, Ollama) often run without an API key.
+  if (connection.type !== 'ollama' && !isLocalHost(connection.baseUrl)) {
+    if (!String(connection.apiKey || '').trim()) {
+      throw new Error(
+        'Clé API manquante pour ' + connectionLabel(connection) + '. Ouvre les réglages de Lili.'
+      );
+    }
+  }
+}
+
+function isTranslationTask(action) {
+  return action === 'translate' || action === 'rephrase_translate';
+}
+
+/** OVHcloud Olala translate expects source/target fields and no system prompt. */
+function isDedicatedTranslationModel(model) {
+  return /olala[^/]*translate/i.test(String(model || ''));
 }
 
 // --------------------------------------------------------------- language
@@ -570,38 +674,144 @@ async function requestOrThrow(url, init, label) {
   return response;
 }
 
+// Stable session id for OpenCode gateways (Go expects it on every request).
+let sessionId = null;
+
+function clientSessionId() {
+  if (!sessionId) {
+    const random =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID().replace(/-/g, '').slice(0, 24)
+        : Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionId = 'ses_lili_' + random;
+    api.storage.local.set({ clientSession: sessionId }).catch(() => {});
+  }
+  return sessionId;
+}
+
+api.storage.local
+  .get('clientSession')
+  .then((stored) => {
+    if (stored && stored.clientSession) sessionId = stored.clientSession;
+  })
+  .catch(() => {});
+
+function hostOf(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '';
+  }
+}
+
+/** Headers for one connection, including provider quirks. */
+function buildHeaders(connection, json) {
+  const headers = {};
+  if (json) headers['Content-Type'] = 'application/json';
+
+  const host = hostOf(connection.baseUrl);
+
+  if (connection.type === 'anthropic') {
+    headers['x-api-key'] = connection.apiKey || '';
+    headers['anthropic-version'] = '2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  } else if (connection.type !== 'ollama') {
+    headers.Authorization = 'Bearer ' + (connection.apiKey || '');
+  }
+
+  if (host === 'opencode.ai' || host.endsWith('.opencode.ai')) {
+    headers['x-opencode-session'] = connection.sessionId || clientSessionId();
+  }
+  if (host === 'openrouter.ai' || host.endsWith('.openrouter.ai')) {
+    headers['X-Title'] = 'Lili';
+  }
+
+  if (connection.headers && typeof connection.headers === 'object') {
+    for (const [key, value] of Object.entries(connection.headers)) {
+      if (typeof value === 'string') headers[key] = value;
+    }
+  }
+
+  return headers;
+}
+
+function modelsUrl(connection) {
+  const base = String(connection.baseUrl || '').trim().replace(/\/+$/, '');
+  if (!base) return '';
+  if (connection.type === 'ollama') return base + '/api/tags';
+  if (connection.type === 'anthropic') return /\/v1$/.test(base) ? base + '/models' : base + '/v1/models';
+  if (/\/openai\/v1$/.test(base)) return base.replace(/\/openai\/v1$/, '/v1/models');
+  if (/\/v1$/.test(base)) return base + '/models';
+  return base + '/v1/models';
+}
+
+async function listModels(connection) {
+  validateConnection(connection);
+  const url = modelsUrl(connection);
+  if (!url) throw new Error('URL de base manquante.');
+
+  const response = await requestOrThrow(
+    url,
+    { method: 'GET', headers: buildHeaders(connection, false) },
+    connectionLabel(connection)
+  );
+
+  const data = await response.json().catch(() => null);
+  if (!data) throw new Error('Réponse inattendue de la liste des modèles.');
+
+  const list =
+    connection.type === 'ollama'
+      ? data.models || []
+      : Array.isArray(data.data)
+        ? data.data
+        : Array.isArray(data.models)
+          ? data.models
+          : [];
+
+  const models = list.map((item) => item.id || item.name || item.model).filter(Boolean);
+  return [...new Set(models)].sort((a, b) => a.localeCompare(b)).slice(0, 1000);
+}
+
 // ---------------------------------------------------------------- adapters
 
 async function callModel(options) {
-  if (options.provider === 'anthropic') return callAnthropic(options);
-  if (options.provider === 'ollama') return callOllama(options);
+  const type = options.connection && options.connection.type;
+  if (type === 'anthropic') return callAnthropic(options);
+  if (type === 'ollama') return callOllama(options);
   return callOpenAI(options);
 }
 
-async function callOpenAI({ config, messages, maxTokens, temperature, stream, onDelta, signal, touch }) {
-  const url = endpoint(config.baseUrl, '/chat/completions');
+async function callOpenAI({
+  connection,
+  model,
+  messages,
+  extraBody,
+  maxTokens,
+  temperature,
+  stream,
+  onDelta,
+  signal,
+  touch,
+}) {
+  const url = endpoint(connection.baseUrl, '/chat/completions');
 
-  const body = {
-    model: config.model,
-    messages,
-    temperature: typeof temperature === 'number' ? temperature : 0.3,
-    max_tokens: maxTokens || 2000,
-    stream: !!stream,
-  };
+  const body = { model, messages, stream: !!stream };
+  if (typeof temperature === 'number') body.temperature = temperature;
+  if (maxTokens) body.max_tokens = maxTokens;
+  if (extraBody && typeof extraBody === 'object') Object.assign(body, extraBody);
 
   const response = await requestOrThrow(
     url,
     {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        ...buildHeaders(connection, true),
         Accept: stream ? 'text/event-stream' : 'application/json',
-        Authorization: 'Bearer ' + (config.apiKey || ''),
       },
       body: JSON.stringify(body),
       signal,
     },
-    providerLabel('openai')
+    connectionLabel(connection)
   );
 
   if (!stream || !isEventStream(response)) {
@@ -637,8 +847,18 @@ async function callOpenAI({ config, messages, maxTokens, temperature, stream, on
   return result;
 }
 
-async function callAnthropic({ config, messages, maxTokens, temperature, stream, onDelta, signal, touch }) {
-  const url = endpoint(config.baseUrl, '/v1/messages');
+async function callAnthropic({
+  connection,
+  model,
+  messages,
+  maxTokens,
+  temperature,
+  stream,
+  onDelta,
+  signal,
+  touch,
+}) {
+  const url = endpoint(connection.baseUrl, '/v1/messages');
 
   const system = messages
     .filter((m) => m.role === 'system')
@@ -647,28 +867,23 @@ async function callAnthropic({ config, messages, maxTokens, temperature, stream,
   const conversation = messages.filter((m) => m.role !== 'system');
 
   const body = {
-    model: config.model,
+    model,
     max_tokens: maxTokens || 2000,
-    temperature: typeof temperature === 'number' ? temperature : 0.3,
     messages: conversation,
     stream: !!stream,
   };
+  if (typeof temperature === 'number') body.temperature = temperature;
   if (system) body.system = system;
 
   const response = await requestOrThrow(
     url,
     {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': config.apiKey || '',
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: buildHeaders(connection, true),
       body: JSON.stringify(body),
       signal,
     },
-    providerLabel('anthropic')
+    connectionLabel(connection)
   );
 
   if (!stream || !isEventStream(response)) {
@@ -708,11 +923,21 @@ async function callAnthropic({ config, messages, maxTokens, temperature, stream,
   return result;
 }
 
-async function callOllama({ config, messages, maxTokens, temperature, stream, onDelta, signal, touch }) {
-  const url = endpoint(config.baseUrl, '/api/chat');
+async function callOllama({
+  connection,
+  model,
+  messages,
+  maxTokens,
+  temperature,
+  stream,
+  onDelta,
+  signal,
+  touch,
+}) {
+  const url = endpoint(connection.baseUrl, '/api/chat');
 
   const body = {
-    model: config.model,
+    model,
     messages,
     stream: !!stream,
     options: {
@@ -726,13 +951,13 @@ async function callOllama({ config, messages, maxTokens, temperature, stream, on
     {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        ...buildHeaders(connection, true),
         Accept: stream ? 'application/x-ndjson' : 'application/json',
       },
       body: JSON.stringify(body),
       signal,
     },
-    providerLabel('ollama')
+    connectionLabel(connection)
   );
 
   if (!stream) {
@@ -766,18 +991,16 @@ async function callOllama({ config, messages, maxTokens, temperature, stream, on
 
 // --------------------------------------------------------------- page summary
 
-async function summarizePageJob({ page, settings, post, signal, touch }) {
+async function summarizePageJob({ page, settings, route, post, signal, touch }) {
   const content = String((page && page.text) || '').trim();
   if (content.length < 150) {
     throw new Error('Cette page ne contient pas assez de texte à résumer.');
   }
 
-  const provider = settings.provider;
-  const config = settings.providers[provider] || {};
   const lang = settings.language.output === 'en' ? 'en' : 'fr';
   const base = {
-    provider,
-    config,
+    connection: route.connection,
+    model: route.model,
     maxTokens: 0,
     temperature: 0.25,
     stream: true,
@@ -795,7 +1018,8 @@ async function summarizePageJob({ page, settings, post, signal, touch }) {
     text: titleCaseFirst(LANG_NAMES[lang]) + ' · ' + used.length + ' section' + (used.length > 1 ? 's' : ''),
   });
 
-  const done = () => post({ type: 'done', provider, model: config.model });
+  const done = () =>
+    post({ type: 'done', provider: connectionLabel(route.connection), model: route.model });
 
   if (used.length <= 1) {
     const prepared = pageSummarizeMessages(page, clipped, lang, settings.summary.length);
@@ -856,20 +1080,11 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
   const known = ['translate', 'rephrase', 'rephrase_translate', 'summarize', 'fix', 'summarize_page'];
   if (!known.includes(action)) throw new Error('Action inconnue : ' + action);
 
-  const provider = settings.provider;
-  const config = settings.providers[provider] || {};
-
-  if (!config.model) {
-    throw new Error('Aucun modèle configuré. Ouvre les réglages de Lili pour choisir un fournisseur et un modèle.');
-  }
-  if (provider !== 'ollama' && !config.apiKey) {
-    throw new Error(
-      'Clé API manquante pour ' + providerLabel(provider) + '. Ouvre les réglages de Lili pour la renseigner.'
-    );
-  }
+  const route = resolveRoute(action, settings);
+  validateConnection(route.connection);
 
   if (action === 'summarize_page') {
-    await summarizePageJob({ page: message.page || {}, settings, post, signal, touch });
+    await summarizePageJob({ page: message.page || {}, settings, route, post, signal, touch });
     return;
   }
 
@@ -896,12 +1111,34 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
 
   const prepared = buildMessages(action, { text, settings, languages });
 
+  let messages = prepared.messages;
+  let extraBody = null;
+  let temperature = prepared.temperature;
+
+  // Dedicated translation models take the text plus explicit language fields.
+  if (isTranslationTask(action) && isDedicatedTranslationModel(route.model)) {
+    if (text.length > DEDICATED_TRANSLATION_MAX_CHARS) {
+      throw new Error(
+        'Ce modèle de traduction dédié accepte environ ' +
+          DEDICATED_TRANSLATION_MAX_CHARS.toLocaleString('fr-FR') +
+          ' caractères. Sélectionne un passage plus court.'
+      );
+    }
+    messages = [userMessage(text)];
+    extraBody = {
+      source_language: ENGLISH_LANG[languages.source] || ENGLISH_LANG[languages.target] || 'English',
+      target_language: ENGLISH_LANG[languages.target] || 'French',
+    };
+    temperature = undefined;
+  }
+
   const result = await callModel({
-    provider,
-    config,
-    messages: prepared.messages,
+    connection: route.connection,
+    model: route.model,
+    messages,
+    extraBody,
     maxTokens: prepared.maxTokens,
-    temperature: prepared.temperature,
+    temperature,
     stream: true,
     signal,
     touch,
@@ -910,15 +1147,17 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
 
   if (isTimedOut()) throw new Error('Délai dépassé.');
 
-  post({ type: 'done', provider, model: config.model, chars: result.length });
+  post({
+    type: 'done',
+    provider: connectionLabel(route.connection),
+    model: route.model,
+    chars: result.length,
+  });
 }
 
-async function testProvider(provider, overrides) {
-  const settings = await getSettings();
-  const config = { ...(settings.providers[provider] || {}), ...(overrides || {}) };
-
-  if (!config.model) throw new Error('Renseigne un nom de modèle.');
-  if (provider !== 'ollama' && !config.apiKey) throw new Error('Renseigne une clé API.');
+async function testConnection(connection) {
+  validateConnection(connection);
+  if (!connection.model) throw new Error('Renseigne un modèle par défaut pour cette connexion.');
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
@@ -926,8 +1165,8 @@ async function testProvider(provider, overrides) {
 
   try {
     const reply = await callModel({
-      provider,
-      config,
+      connection,
+      model: connection.model,
       messages: [
         systemMessage('Tu es un test de connexion. Réponds uniquement par : OK'),
         userMessage('Réponds uniquement par : OK'),
@@ -1080,11 +1319,15 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'lili:test') {
     return respond(
-      testProvider(message.provider, message.config).then((result) => ({
+      testConnection(message.connection).then((result) => ({
         ok: true,
         ...result,
       }))
     );
+  }
+
+  if (message.type === 'lili:list-models') {
+    return respond(listModels(message.connection).then((models) => ({ ok: true, models })));
   }
 
   if (message.type === 'lili:open-options') {

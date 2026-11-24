@@ -184,3 +184,101 @@ input[type="checkbox"] {
 .status { font-size: 12.5px; color: var(--muted); }
 .status.ok { color: var(--ok); }
 .status.err { color: var(--danger); white-space: pre-wrap; }
+
+/* --------------------------------------------------------- connections */
+
+.connections { display: flex; flex-direction: column; gap: 12px; }
+
+.conn {
+  padding: 14px 14px 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--soft) 45%, var(--card));
+}
+
+.conn-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.conn-title { font-size: 13.5px; }
+
+.badge {
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.conn-actions { display: flex; gap: 2px; flex-wrap: wrap; margin-left: auto; }
+button.ghost.danger { color: var(--danger); }
+.conn .field { margin-bottom: 10px; }
+.conn-msg { margin: 0 0 12px; }
+.conn-msg.err { color: var(--danger); }
+
+.add-row { margin-top: 16px; }
+.add-row select { flex: 1; min-width: 220px; max-width: 440px; }
+.empty { margin: 0; color: var(--muted); font-size: 13px; }
+
+/* -------------------------------------------------------------- routes */
+
+.routes {
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.route {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.3fr) minmax(150px, 1fr) minmax(160px, 1.2fr);
+  gap: 10px;
+  align-items: center;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.route:last-child { border-bottom: 0; }
+.route:nth-child(even) { background: color-mix(in srgb, var(--soft) 40%, transparent); }
+
+.route-head {
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.route-name { font-size: 12.5px; font-weight: 550; }
+
+.route select,
+.route input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12.5px;
+}
+
+.route select:focus,
+.route input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .route { grid-template-columns: 1fr 1fr; }
+  .route-name { grid-column: 1 / -1; }
+}

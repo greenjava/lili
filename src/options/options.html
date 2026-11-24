@@ -15,86 +15,42 @@
           <p>Traduire, reformuler, résumer — sans quitter la page.</p>
         </div>
       </div>
-      <span class="version">v0.1.0</span>
+      <span class="version"></span>
     </header>
 
     <main>
       <section class="card">
-        <h2>Fournisseur</h2>
+        <h2>Connexions</h2>
         <p class="help">
-          Lili appelle directement l’API depuis le navigateur. Rien ne transite par un serveur
-          intermédiaire : ton texte part uniquement vers le fournisseur choisi.
+          Ajoute un ou plusieurs services. Lili appelle directement leur API : rien ne transite par un
+          serveur intermédiaire. Chaque tâche pourra ensuite utiliser une connexion et un modèle
+          différents.
         </p>
 
-        <div class="field">
-          <label for="provider">Service utilisé</label>
-          <select id="provider">
-            <option value="openai">OpenAI ou compatible (Mistral, Groq, OpenRouter, vLLM…)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-            <option value="ollama">Ollama (local)</option>
-          </select>
+        <div id="connections" class="connections"></div>
+
+        <div class="row add-row">
+          <select id="preset" aria-label="Service à ajouter"></select>
+          <button type="button" id="add-connection" class="secondary">Ajouter la connexion</button>
         </div>
 
-        <div class="provider" data-provider="openai">
-          <div class="field">
-            <label for="openai-baseUrl">URL de base</label>
-            <input id="openai-baseUrl" type="url" spellcheck="false" placeholder="https://api.openai.com/v1" />
-            <p class="hint">L’endpoint <code>/chat/completions</code> est ajouté automatiquement.</p>
-          </div>
-          <div class="field">
-            <label for="openai-apiKey">Clé API</label>
-            <div class="secret">
-              <input id="openai-apiKey" type="password" spellcheck="false" autocomplete="off" placeholder="sk-…" />
-              <button type="button" class="ghost" data-reveal="openai-apiKey">Afficher</button>
-            </div>
-          </div>
-          <div class="field">
-            <label for="openai-model">Modèle</label>
-            <input id="openai-model" type="text" spellcheck="false" placeholder="gpt-4o-mini" />
-          </div>
-        </div>
+        <p id="connections-status" class="hint" hidden></p>
+      </section>
 
-        <div class="provider" data-provider="anthropic" hidden>
-          <div class="field">
-            <label for="anthropic-baseUrl">URL de base</label>
-            <input id="anthropic-baseUrl" type="url" spellcheck="false" placeholder="https://api.anthropic.com" />
-          </div>
-          <div class="field">
-            <label for="anthropic-apiKey">Clé API</label>
-            <div class="secret">
-              <input id="anthropic-apiKey" type="password" spellcheck="false" autocomplete="off" placeholder="sk-ant-…" />
-              <button type="button" class="ghost" data-reveal="anthropic-apiKey">Afficher</button>
-            </div>
-          </div>
-          <div class="field">
-            <label for="anthropic-model">Modèle</label>
-            <input id="anthropic-model" type="text" spellcheck="false" placeholder="claude-3-5-haiku-latest" />
-          </div>
-        </div>
+      <section class="card">
+        <h2>Modèles par tâche</h2>
+        <p class="help">
+          Choisis la connexion et le modèle de chaque tâche. Laisse la connexion sur
+          « Par défaut » pour réutiliser la connexion par défaut ; laisse le modèle vide pour
+          utiliser le modèle par défaut de la connexion.
+        </p>
 
-        <div class="provider" data-provider="ollama" hidden>
-          <div class="field">
-            <label for="ollama-baseUrl">URL de base</label>
-            <input id="ollama-baseUrl" type="url" spellcheck="false" placeholder="http://localhost:11434" />
-            <p class="hint">
-              Pour autoriser l’extension, lance Ollama avec
-              <code>OLLAMA_ORIGINS="*"</code> (ou l’origine de l’extension).
-            </p>
-          </div>
-          <div class="field">
-            <label for="ollama-model">Modèle</label>
-            <input id="ollama-model" type="text" spellcheck="false" placeholder="llama3.1:8b" />
-            <p class="hint">Le modèle doit être téléchargé : <code>ollama pull llama3.1:8b</code>.</p>
-          </div>
-        </div>
+        <div id="routes" class="routes"></div>
 
-        <div class="row">
-          <button type="button" id="test" class="secondary">Tester la connexion</button>
-          <span id="test-result" class="result" hidden></span>
-        </div>
-        <p class="hint" id="permission-hint">
-          À l’enregistrement, le navigateur demandera l’autorisation d’accéder à cet hôte. C’est
-          nécessaire pour contourner les restrictions CORS.
+        <p class="hint">
+          Les modèles de traduction dédiés (par exemple <code>Olala-v1.0-translate</code>) reçoivent
+          automatiquement les langues source et cible, sans prompt système. Sur « Reformuler +
+          traduire », un tel modèle traduit sans reformuler.
         </p>
       </section>
 
@@ -198,6 +154,66 @@
       <button type="button" id="reset" class="secondary">Réinitialiser</button>
       <span id="status" class="status" role="status"></span>
     </footer>
+
+    <div id="datalists"></div>
+
+    <template id="connection-template">
+      <article class="conn">
+        <div class="conn-head">
+          <strong class="conn-title"></strong>
+          <span class="badge conn-badge"></span>
+          <div class="conn-actions">
+            <button type="button" class="ghost" data-act="models">Charger les modèles</button>
+            <button type="button" class="ghost" data-act="test">Tester</button>
+            <button type="button" class="ghost danger" data-act="remove">Supprimer</button>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label>Nom</label>
+            <input data-field="label" type="text" spellcheck="false" />
+          </div>
+          <div class="field">
+            <label>Type d’API</label>
+            <select data-field="type">
+              <option value="openai">OpenAI-compatible</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="ollama">Ollama</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>URL de base</label>
+          <input data-field="baseUrl" type="url" spellcheck="false" />
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label>Modèle par défaut</label>
+            <input data-field="model" type="text" spellcheck="false" />
+          </div>
+          <div class="field">
+            <label>Clé API</label>
+            <div class="secret">
+              <input data-field="apiKey" type="password" autocomplete="off" spellcheck="false" />
+              <button type="button" class="ghost" data-act="reveal">Afficher</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="conn-msg hint" hidden></p>
+      </article>
+    </template>
+
+    <template id="route-template">
+      <div class="route">
+        <span class="route-name"></span>
+        <select data-route="connection"></select>
+        <input data-route="model" type="text" spellcheck="false" placeholder="modèle" />
+      </div>
+    </template>
 
     <script src="../shared/constants.js"></script>
     <script src="options.js"></script>
