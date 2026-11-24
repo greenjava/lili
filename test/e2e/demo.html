@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Page de démonstration — Yogi</title>
+    <style>
+      body {
+        max-width: 760px;
+        margin: 40px auto;
+        padding: 0 24px 120px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 17px;
+        line-height: 1.65;
+        color: #1f2937;
+        background: #fbfbfd;
+      }
+      h1 { font-size: 30px; line-height: 1.2; margin-bottom: 6px; }
+      .byline { color: #6b7280; font-size: 13px; margin-bottom: 28px; font-family: sans-serif; }
+      h2 { font-size: 20px; margin-top: 32px; }
+      textarea, [contenteditable] {
+        width: 100%;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: #fff;
+      }
+      .box { margin: 28px 0; padding: 16px; border: 1px dashed #c7d2fe; border-radius: 10px; background: #eef2ff; }
+      .box h3 { margin: 0 0 10px; font-family: sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #4338ca; }
+    </style>
+  </head>
+  <body>
+    <h1>Comment fonctionne un résumé automatique</h1>
+    <p class="byline">Page de démonstration · Yogi</p>
+
+    <article>
+      <p>
+        Un résumé automatique consiste à réduire un texte tout en conservant les informations
+        essentielles. L’objectif n’est pas de réécrire le document, mais d’en extraire la substance :
+        les idées principales, les faits, les chiffres et les conclusions. Un bon résumé doit rester
+        fidèle au source, sans ajouter d’interprétation personnelle ni d’information absente.
+      </p>
+      <p>
+        La première étape consiste à extraire le contenu utile de la page. Les menus, les publicités,
+        les commentaires et les éléments de navigation sont écartés. Il reste alors le corps de
+        l’article, que l’on découpe en sections lorsque le texte est trop long pour tenir dans une
+        seule requête. Chaque section est traitée séparément, puis les notes obtenues sont fusionnées
+        dans une synthèse finale.
+      </p>
+
+      <h2>Pourquoi découper le texte</h2>
+      <p>
+        Les modèles de langage ont une fenêtre de contexte limitée. Au-delà d’un certain nombre de
+        caractères, il faut choisir : tronquer le texte, ce qui fait perdre la fin du document, ou le
+        découper en morceaux. Le découpage présente l’avantage de couvrir l’intégralité du contenu,
+        au prix de plusieurs appels successifs. La synthèse finale recompose une vision cohérente à
+        partir des notes intermédiaires.
+      </p>
+      <p>
+        Le découpage doit respecter les frontières naturelles du texte : paragraphes, phrases,
+        sections. Couper au milieu d’une phrase produit des notes bancales. Un bon découpage cherche
+        la dernière ponctuation forte avant la limite de taille, puis reprend le texte à cet endroit.
+      </p>
+
+      <h2>Les limites de l’exercice</h2>
+      <p>
+        Un résumé n’est jamais neutre. Selon la longueur demandée et le ton adopté, il met en avant
+        des éléments différents. Il peut aussi passer à côté d’une nuance importante, ou au contraire
+        survaloriser un détail. C’est pourquoi il est utile de pouvoir demander plusieurs niveaux de
+        détail : une version courte pour décider si le document mérite d’être lu, et une version plus
+        longue pour préparer une réunion ou une prise de notes.
+      </p>
+      <p>
+        Enfin, la langue compte. Un lecteur francophone qui consulte un article anglophone préférera
+        souvent un résumé en français, même si le document d’origine reste en anglais. La traduction
+        et le résumé sont deux opérations distinctes, mais elles se combinent naturellement : on peut
+        résumer puis traduire, ou traduire puis résumer. Dans les deux cas, le résultat doit conserver
+        les noms propres, les chiffres et les références.
+      </p>
+
+      <h2>Un cas concret</h2>
+      <p>
+        Imaginez un rapport de quarante pages. Le résumer en trois phrases aide à décider s’il faut le
+        lire. Le résumer en dix puces aide à préparer une réunion. Le résumer section par section aide
+        à retrouver un chiffre précis. Ces trois usages ne demandent pas le même travail : le premier
+        est une sélection brutale, le deuxième une synthèse structurée, le troisième un index.
+      </p>
+      <p>
+        C’est exactement ce que propose une extension comme Yogi : une barre d’actions apparaît près
+        de la sélection, et le résultat s’affiche dans un panneau. Pour un champ de formulaire, le
+        texte peut être remplacé directement, ce qui évite le copier-coller. Pour une page entière, le
+        contenu est extrait, découpé, puis résumé.
+      </p>
+    </article>
+
+    <div class="box">
+      <h3>Champ texte (remplacement direct)</h3>
+      <textarea id="field" rows="3">Bonjour, ceci est un texte à traduire directement dans un champ de formulaire.</textarea>
+    </div>
+
+    <div class="box">
+      <h3>Zone éditable (contenteditable)</h3>
+      <div id="editable" contenteditable="true">Ce paragraphe est éditable et peut être reformulé sur place.</div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Checks, Firefox lint, Chrome e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static checks
+        run: npm run check
+
+      - name: Build Chrome and Firefox packages
+        run: npm run build:zip
+
+      - name: Lint Firefox package
+        run: npm run lint:firefox
+
+      - name: Install Chrome for Testing
+        run: npx @puppeteer/browsers install chrome@stable --path .cache/chrome
+
+      - name: End-to-end tests
+        env:
+          E2E_ARTIFACTS: '1'
+        run: |
+          CHROME_PATH=$(find .cache/chrome -type f -name chrome | head -n 1)
+          if [ -z "$CHROME_PATH" ]; then
+            echo "::error::Chrome for Testing not found"
+            exit 1
+          fi
+          echo "Chrome: $CHROME_PATH"
+          CHROME_PATH="$CHROME_PATH" npm run test:e2e
+
+      - name: Upload e2e screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: test/e2e/artifacts
+          if-no-files-found: ignore
+
+      - name: Upload extension packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: lili-packages
+          path: |
+            dist/lili-chrome.zip
+            dist/lili-firefox.zip
+          if-no-files-found: ignore

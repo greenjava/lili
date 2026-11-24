@@ -7,10 +7,19 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:zip": "node scripts/build.mjs --zip",
+    "check": "node scripts/check.mjs",
     "icons": "python3 scripts/make-icons.py",
-    "check": "node scripts/check.mjs"
+    "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors",
+    "test:e2e": "node scripts/build.mjs && node test/e2e/run.mjs",
+    "test": "npm run check && npm run test:e2e",
+    "verify:version": "node scripts/verify-version.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.11"
+  },
+  "devDependencies": {
+    "@puppeteer/browsers": "^3.2.7",
+    "puppeteer-core": "^25.18.1",
+    "web-ext": "^10.8.0"
   }
 }

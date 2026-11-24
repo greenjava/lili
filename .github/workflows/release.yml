@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Package and publish GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check the tag is on main
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $GITHUB_REF_NAME does not point to a commit on main."
+            exit 1
+          fi
+
+      - name: Check versions
+        run: npm run verify:version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static checks
+        run: npm run check
+
+      - name: Build packages
+        run: npm run build:zip
+
+      - name: Lint Firefox package
+        run: npm run lint:firefox
+
+      - name: Verify archives
+        run: |
+          unzip -t dist/lili-chrome.zip > /dev/null
+          unzip -t dist/lili-firefox.zip > /dev/null
+
+      - name: Install Chrome for Testing
+        run: npx @puppeteer/browsers install chrome@stable --path .cache/chrome
+
+      - name: End-to-end tests
+        run: |
+          CHROME_PATH=$(find .cache/chrome -type f -name chrome | head -n 1)
+          if [ -z "$CHROME_PATH" ]; then
+            echo "::error::Chrome for Testing not found"
+            exit 1
+          fi
+          CHROME_PATH="$CHROME_PATH" npm run test:e2e
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/lili-chrome.zip
+            dist/lili-firefox.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true

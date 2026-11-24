@@ -180,7 +180,15 @@ src/
 scripts/
 ├── build.mjs                # dist/chrome + dist/firefox (+ zip)
 ├── check.mjs                # syntaxe JS + JSON
+├── verify-version.mjs       # versions package/manifest/tag
 └── make-icons.py            # icônes PNG
+test/e2e/
+├── run.mjs                  # scénario Chrome (37 assertions)
+├── mock.mjs                 # deux faux fournisseurs OpenAI
+└── demo.html
+.github/workflows/
+├── ci.yml                   # checks + lint + e2e
+└── release.yml              # release sur tag v*
 ```
 
 **Flux d’une action** : le content script capture la sélection → ouvre un port
@@ -190,7 +198,8 @@ moment de la sélection.
 
 Points techniques :
 
-- Aucun bundler, aucune dépendance npm : les scripts sont chargés tels quels.
+- Aucun bundler et aucune dépendance à l’exécution : les scripts sont chargés tels quels. Les
+  `devDependencies` ne servent qu’aux tests et au packaging.
 - Le background est un script classique, compatible `service_worker` (Chrome) et `scripts`
   (Firefox).
 - L’UI vit dans un shadow root : pas de fuite CSS, pas de blocage par la CSP du site
@@ -203,10 +212,26 @@ Points techniques :
 ## Développement
 
 ```bash
-npm run icons     # régénère les icônes PNG (Pillow)
-npm run check     # node --check sur tous les scripts + validation JSON
-npm run build     # dist/chrome + dist/firefox
+npm ci                # dépendances de test (puppeteer-core, web-ext)
+npm run icons         # régénère les icônes PNG (Pillow)
+npm run check         # node --check + validation JSON
+npm run build         # dist/chrome + dist/firefox
+npm run build:zip     # + dist/lili-chrome.zip et dist/lili-firefox.zip
+npm run lint:firefox  # addons-linter (warnings = erreurs)
+npm run verify:version
+npm test              # check + e2e Chrome
 ```
+
+Tests de bout en bout (Chrome requis) :
+
+```bash
+npx @puppeteer/browsers install chrome@stable --path .cache/chrome
+CHROME_PATH=$(find .cache/chrome -type f -name chrome | head -n 1) npm run test:e2e
+```
+
+Le harness démarre deux faux fournisseurs OpenAI, charge l’extension dans Chrome, puis vérifie le
+routage par tâche, les modèles OVH, le streaming, le remplacement, les résumés, le popup, le
+déplacement et le redimensionnement du panneau (37 assertions).
 
 Après une modification, relance `npm run build` puis :
 - Chrome : icône **Recharger** dans `chrome://extensions` ;
@@ -218,6 +243,8 @@ Après une modification, relance `npm run build` puis :
   action.
 - Aucune télémétrie, aucun serveur maison, aucun compte.
 - La clé API est stockée dans `chrome.storage.local` (profil du navigateur), jamais dans le code.
+- Le manifeste Firefox déclare la collecte `websiteContent` : le texte traité est transmis au
+  fournisseur que tu as configuré, et à lui seul.
 - Les prompts et les réponses ne sont pas journalisés.
 
 ## Limites connues
@@ -248,6 +275,35 @@ Après une modification, relance `npm run build` puis :
 | « Impossible de lister les modèles » sur OVHcloud | La liste est publique mais refusée avec un token invalide : Lili réessaie sans clé. Si l’erreur persiste, recharge l’extension, puis vérifie l’accès réseau à l’hôte. |
 | Pas de barre sur une page | Page interne/PDF, sélection dans une iframe, ou barre désactivée dans les réglages. |
 | Rien ne se passe après un rechargement d’extension | Recharge l’onglet : les content scripts ne sont pas réinjectés à chaud. |
+
+## CI et release
+
+- `.github/workflows/ci.yml` — sur chaque push `dev` / `main` et chaque pull request :
+  `npm run check`, build des deux paquets, `web-ext lint`, installation de Chrome for Testing puis
+  `npm run test:e2e`. Les captures du test sont publiées en artefact.
+- `.github/workflows/release.yml` — sur un tag `v*` : vérifie que le tag pointe sur un commit de
+  `main`, que `package.json`, `src/manifest.base.json` et le tag ont la même version, reconstruit,
+  relint, puis crée une **GitHub Release** avec `lili-chrome.zip` et `lili-firefox.zip`.
+
+### Publier une version
+
+```bash
+# 1. même version dans package.json et src/manifest.base.json
+# 2. commit sur dev, puis merge dans main
+git switch dev
+# ... modifier, committer, pousser
+git switch main
+git merge dev
+git push origin main
+
+# 3. tag sur le commit de main
+git tag v0.3.1
+git push origin v0.3.1
+```
+
+Le workflow échoue si le tag n’est pas sur `main` ou si les versions divergent. La publication sur
+le Chrome Web Store et addons.mozilla.org n’est pas automatisée (secrets et revue nécessaires) :
+les zips de la release sont prêts à être téléversés.
 
 ## Conventions de développement
 
