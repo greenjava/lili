@@ -96,7 +96,9 @@ saisie libre. À l’enregistrement, le navigateur demande l’accès aux hôtes
 pour contourner CORS.
 
 Les listes viennent de `GET {base}/models` (OpenAI-compatible), `GET /v1/models` (Anthropic) et
-`GET /api/tags` (Ollama). Les bases OpenCode `/openai/v1` sont converties en `/v1/models`.
+`GET /api/tags` (Ollama). Les bases OpenCode `/openai/v1` sont converties en `/v1/models`. Si la
+liste est refusée avec la clé (401/403) mais publique sans authentification — cas d’OVHcloud — Lili
+réessaie sans clé. Les modèles non conversationnels (TTS, Whisper, embeddings, images) sont filtrés.
 
 ### 2. Router les tâches
 
@@ -239,6 +241,7 @@ Après une modification, relance `npm run build` puis :
 | « 400 source_language / target_language » | Modèle de traduction dédié utilisé sur une autre tâche que la traduction. |
 | « 403 » avec OpenCode | Modèle gratuit réservé au client OpenCode : choisis un modèle payant ou Go. |
 | Un modèle est refusé après changement de connexion | Vérifie la ligne de routage correspondante et recharge les réglages. |
+| « Impossible de lister les modèles » sur OVHcloud | La liste est publique mais refusée avec un token invalide : Lili réessaie sans clé. Si l’erreur persiste, recharge l’extension, puis vérifie l’accès réseau à l’hôte. |
 | Pas de barre sur une page | Page interne/PDF, sélection dans une iframe, ou barre désactivée dans les réglages. |
 | Rien ne se passe après un rechargement d’extension | Recharge l’onglet : les content scripts ne sont pas réinjectés à chaud. |
 

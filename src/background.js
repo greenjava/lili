@@ -657,18 +657,24 @@ async function requestOrThrow(url, init, label) {
     const detail = extractErrorMessage(body);
     const suffix = detail ? '\n\nDétail : ' + detail : '';
 
+    const fail = (text) => {
+      const error = new Error(text);
+      error.status = response.status;
+      return error;
+    };
+
     if (response.status === 401 || response.status === 403) {
-      throw new Error('Accès refusé (' + response.status + '). Vérifie la clé API dans les réglages.' + suffix);
+      throw fail('Accès refusé (' + response.status + '). Vérifie la clé API dans les réglages.' + suffix);
     }
     if (response.status === 404) {
-      throw new Error(
+      throw fail(
         'Endpoint ou modèle introuvable (404). Vérifie l’URL de base et le nom du modèle.' + suffix
       );
     }
     if (response.status === 429) {
-      throw new Error('Quota ou limite de débit atteint (429). Réessaie dans un instant.' + suffix);
+      throw fail('Quota ou limite de débit atteint (429). Réessaie dans un instant.' + suffix);
     }
-    throw new Error('Erreur du service (' + response.status + ').' + suffix);
+    throw fail('Erreur du service (' + response.status + ').' + suffix);
   }
 
   return response;
@@ -705,18 +711,22 @@ function hostOf(url) {
 }
 
 /** Headers for one connection, including provider quirks. */
-function buildHeaders(connection, json) {
+function buildHeaders(connection, json, options) {
+  const opts = options || {};
   const headers = {};
   if (json) headers['Content-Type'] = 'application/json';
 
   const host = hostOf(connection.baseUrl);
+  const withAuth = opts.auth !== false;
 
-  if (connection.type === 'anthropic') {
+  if (withAuth && connection.type === 'anthropic') {
     headers['x-api-key'] = connection.apiKey || '';
     headers['anthropic-version'] = '2023-06-01';
     headers['anthropic-dangerous-direct-browser-access'] = 'true';
-  } else if (connection.type !== 'ollama') {
+  } else if (withAuth && connection.type !== 'ollama') {
     headers.Authorization = 'Bearer ' + (connection.apiKey || '');
+  } else if (connection.type === 'anthropic') {
+    headers['anthropic-version'] = '2023-06-01';
   }
 
   if (host === 'opencode.ai' || host.endsWith('.opencode.ai')) {
@@ -764,11 +774,28 @@ async function listModels(connection, refresh) {
 
   let models;
   try {
-    const response = await requestOrThrow(
-      url,
-      { method: 'GET', headers: buildHeaders(connection, false) },
-      connectionLabel(connection)
-    );
+    let response;
+    try {
+      response = await requestOrThrow(
+        url,
+        { method: 'GET', headers: buildHeaders(connection, false) },
+        connectionLabel(connection)
+      );
+    } catch (error) {
+      // Model catalogs are often public (OVHcloud, OpenRouter): retry without the key.
+      if (
+        connection.type === 'openai' &&
+        (error.status === 401 || error.status === 403)
+      ) {
+        response = await requestOrThrow(
+          url,
+          { method: 'GET', headers: buildHeaders(connection, false, { auth: false }) },
+          connectionLabel(connection)
+        );
+      } else {
+        throw error;
+      }
+    }
 
     const data = await response.json().catch(() => null);
     if (!data) throw new Error('Réponse inattendue de la liste des modèles.');
@@ -782,7 +809,16 @@ async function listModels(connection, refresh) {
             ? data.models
             : [];
 
-    models = [...new Set(list.map((item) => item.id || item.name || item.model).filter(Boolean))]
+    const isTextModel = (item) => {
+      const id = String(item.id || item.name || item.model || '');
+      if (!id) return false;
+      if (typeof item.context_length === 'number' && item.context_length === 0) return false;
+      return !/(^|[-_/])(tts|whisper|embedding|embeddings|embed|bge|stable-diffusion|sd[-_]?xl)([-_/]|$)/i.test(
+        id
+      );
+    };
+
+    models = [...new Set(list.filter(isTextModel).map((item) => item.id || item.name || item.model))]
       .sort((a, b) => a.localeCompare(b))
       .slice(0, 1000);
   } catch (error) {

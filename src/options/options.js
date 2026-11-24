@@ -575,7 +575,12 @@
         updateCounts();
         cardMessage(card, modelCache[connection.id].length + ' modèles chargés.');
       } else {
-        cardMessage(card, (response && response.error) || 'Impossible de lister les modèles.', true);
+        cardMessage(
+          card,
+          (response && response.error) ||
+            'Aucune réponse du service d’arrière-plan : recharge l’extension puis réessaie.',
+          true
+        );
       }
     } catch (error) {
       cardMessage(card, 'Échec : ' + ((error && error.message) || error), true);
