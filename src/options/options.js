@@ -231,23 +231,137 @@
     };
   }
 
-  // --------------------------------------------------------------- rendering
+  // ---------------------------------------------------------------- pickers
 
-  function refreshDatalists() {
-    const box = $('#datalists');
-    box.textContent = '';
+  const pickers = [];
 
-    for (const connection of state.connections) {
-      const list = document.createElement('datalist');
-      list.id = 'models-' + connection.id;
-      for (const model of modelCache[connection.id] || []) {
+  function createModelPicker(options) {
+    const wrap = document.createElement('div');
+    wrap.className = 'picker';
+
+    const select = document.createElement('select');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.spellcheck = false;
+    input.autocomplete = 'off';
+    wrap.append(select, input);
+
+    const picker = {
+      element: wrap,
+      select,
+      input,
+      models: [],
+      value: options.value || '',
+      custom: false,
+      emptyLabel: options.emptyLabel || '— défaut —',
+      kind: options.kind || 'route',
+      placeholder: 'modèle',
+      getConnection: options.getConnection || (() => null),
+      onChange: options.onChange || (() => {}),
+    };
+
+    function render() {
+      if (!picker.models.length) {
+        select.hidden = true;
+        input.hidden = false;
+        input.placeholder = picker.placeholder;
+        if (input.value !== picker.value) input.value = picker.value;
+        return;
+      }
+
+      select.hidden = false;
+      select.textContent = '';
+
+      const empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = picker.emptyLabel;
+      select.appendChild(empty);
+
+      for (const model of picker.models) {
         const option = document.createElement('option');
         option.value = model;
-        list.appendChild(option);
+        option.textContent = model;
+        select.appendChild(option);
       }
-      box.appendChild(list);
+
+      if (picker.value && !picker.models.includes(picker.value)) {
+        const option = document.createElement('option');
+        option.value = picker.value;
+        option.textContent = picker.value + ' · personnalisé';
+        select.appendChild(option);
+      }
+
+      const custom = document.createElement('option');
+      custom.value = '__custom__';
+      custom.textContent = 'Autre modèle…';
+      select.appendChild(custom);
+
+      if (picker.custom) {
+        select.value = '__custom__';
+        input.hidden = false;
+        input.placeholder = picker.placeholder;
+        if (input.value !== picker.value) input.value = picker.value;
+      } else {
+        select.value = picker.value;
+        input.hidden = true;
+      }
+    }
+
+    select.addEventListener('change', () => {
+      if (select.value === '__custom__') {
+        picker.custom = true;
+        input.hidden = false;
+        input.value = picker.value;
+        input.focus();
+        return;
+      }
+      picker.custom = false;
+      picker.value = select.value;
+      input.value = picker.value;
+      picker.onChange(picker.value);
+    });
+
+    input.addEventListener('input', () => {
+      picker.value = input.value.trim();
+      picker.onChange(picker.value);
+    });
+
+    input.addEventListener('blur', () => {
+      if (picker.custom && !picker.value && picker.models.length) {
+        picker.custom = false;
+        render();
+      }
+    });
+
+    picker.render = render;
+    pickers.push(picker);
+    render();
+    return picker;
+  }
+
+  function refreshPickers() {
+    for (const picker of pickers) {
+      const connection = picker.getConnection();
+      picker.models = connection ? modelCache[connection.id] || [] : [];
+      picker.placeholder = connection && connection.model ? connection.model + ' (défaut)' : 'modèle';
+      if (picker.kind === 'route') {
+        picker.emptyLabel =
+          connection && connection.model ? 'Défaut : ' + connection.model : '— défaut —';
+      }
+      picker.render();
     }
   }
+
+  function updateCounts() {
+    for (const card of document.querySelectorAll('#connections .conn')) {
+      const count = card.querySelector('.conn-count');
+      if (!count) continue;
+      const models = modelCache[card.dataset.id] || [];
+      count.textContent = models.length ? models.length + ' modèles' : '';
+    }
+  }
+
+  // --------------------------------------------------------------- rendering
 
   function buildConnection(connection) {
     const template = $('#connection-template');
@@ -260,7 +374,7 @@
     title.textContent = connection.label || connection.id;
     badge.textContent = typeLabel(connection.type);
 
-    for (const name of ['label', 'type', 'baseUrl', 'model', 'apiKey']) {
+    for (const name of ['label', 'type', 'baseUrl', 'apiKey']) {
       const input = fragment.querySelector('[data-field="' + name + '"]');
       input.value = connection[name] || '';
 
@@ -268,12 +382,26 @@
         connection[name] = input.value;
         if (name === 'label') title.textContent = input.value || connection.id;
         if (name === 'type') badge.textContent = typeLabel(input.value);
-        if (name === 'type') refreshDatalists();
+        if (name === 'type' || name === 'baseUrl') {
+          delete modelCache[connection.id];
+          refreshPickers();
+          updateCounts();
+        }
       });
     }
 
-    const model = fragment.querySelector('[data-field="model"]');
-    model.setAttribute('list', 'models-' + connection.id);
+    const slot = fragment.querySelector('[data-field="model"]');
+    const picker = createModelPicker({
+      value: connection.model,
+      emptyLabel: '— aucun —',
+      kind: 'connection',
+      getConnection: () => connection,
+      onChange: (value) => {
+        connection.model = value;
+        refreshPickers();
+      },
+    });
+    slot.appendChild(picker.element);
 
     return card;
   }
@@ -300,7 +428,6 @@
     const fragment = template.content.cloneNode(true);
     const row = fragment.querySelector('.route');
     const select = fragment.querySelector('[data-route="connection"]');
-    const model = fragment.querySelector('[data-route="model"]');
 
     row.querySelector('.route-name').textContent = label;
 
@@ -317,28 +444,28 @@
     }
 
     select.value = state.connections.some((c) => c.id === route.connection) ? route.connection : '';
-    model.value = route.model || '';
 
-    const sync = () => {
-      const selected =
-        state.connections.find((c) => c.id === select.value) ||
-        state.connections.find((c) => c.id === state.fallback.connection) ||
-        state.connections[0] ||
-        null;
-      model.setAttribute('list', selected ? 'models-' + selected.id : '');
-      model.placeholder = selected && selected.model ? selected.model + ' (défaut)' : 'modèle';
-    };
+    const effectiveConnection = () =>
+      state.connections.find((c) => c.id === select.value) ||
+      state.connections.find((c) => c.id === state.fallback.connection) ||
+      state.connections[0] ||
+      null;
+
+    const picker = createModelPicker({
+      value: route.model,
+      emptyLabel: '— défaut —',
+      getConnection: effectiveConnection,
+      onChange: (value) => {
+        route.model = value;
+      },
+    });
+    fragment.querySelector('[data-route="model"]').appendChild(picker.element);
 
     select.addEventListener('change', () => {
       route.connection = select.value;
-      sync();
+      refreshPickers();
     });
 
-    model.addEventListener('input', () => {
-      route.model = model.value.trim();
-    });
-
-    sync();
     return row;
   }
 
@@ -365,9 +492,11 @@
   }
 
   function renderAll() {
+    pickers.length = 0;
     renderConnections();
     renderRoutes();
-    refreshDatalists();
+    refreshPickers();
+    updateCounts();
   }
 
   // ---------------------------------------------------------------- actions
@@ -439,20 +568,38 @@
 
     cardMessage(card, 'Chargement des modèles…');
     try {
-      const response = await send({ type: 'lili:list-models', connection });
+      const response = await send({ type: 'lili:list-models', connection, refresh: true });
       if (response && response.ok) {
         modelCache[connection.id] = response.models || [];
-        refreshDatalists();
-        cardMessage(
-          card,
-          modelCache[connection.id].length + ' modèles chargés — le champ « Modèle » propose la liste.'
-        );
+        refreshPickers();
+        updateCounts();
+        cardMessage(card, modelCache[connection.id].length + ' modèles chargés.');
       } else {
         cardMessage(card, (response && response.error) || 'Impossible de lister les modèles.', true);
       }
     } catch (error) {
       cardMessage(card, 'Échec : ' + ((error && error.message) || error), true);
     }
+  }
+
+  /** Prefetch model lists in the background; failures stay silent. */
+  async function autoLoadModels() {
+    const targets = state.connections.filter((connection) => connection.baseUrl);
+    if (!targets.length) return;
+
+    await Promise.all(
+      targets.map(async (connection) => {
+        try {
+          const response = await send({ type: 'lili:list-models', connection });
+          if (response && response.ok) modelCache[connection.id] = response.models || [];
+        } catch {
+          /* no host permission yet: the refresh button will ask for it */
+        }
+      })
+    );
+
+    refreshPickers();
+    updateCounts();
   }
 
   async function save() {
@@ -570,6 +717,7 @@
 
     fillStaticForm();
     renderAll();
+    autoLoadModels();
   }
 
   $('#save').addEventListener('click', save);

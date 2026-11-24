@@ -745,31 +745,54 @@ function modelsUrl(connection) {
   return base + '/v1/models';
 }
 
-async function listModels(connection) {
+const MODEL_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+
+async function listModels(connection, refresh) {
   validateConnection(connection);
+
+  const stored = await api.storage.local.get('modelCache');
+  const cache = stored.modelCache || {};
+  const entry = cache[connection.id];
+  const cached = entry && entry.baseUrl === connection.baseUrl && Array.isArray(entry.models);
+
+  if (!refresh && cached && Date.now() - entry.at < MODEL_CACHE_TTL) {
+    return entry.models;
+  }
+
   const url = modelsUrl(connection);
   if (!url) throw new Error('URL de base manquante.');
 
-  const response = await requestOrThrow(
-    url,
-    { method: 'GET', headers: buildHeaders(connection, false) },
-    connectionLabel(connection)
-  );
+  let models;
+  try {
+    const response = await requestOrThrow(
+      url,
+      { method: 'GET', headers: buildHeaders(connection, false) },
+      connectionLabel(connection)
+    );
 
-  const data = await response.json().catch(() => null);
-  if (!data) throw new Error('Réponse inattendue de la liste des modèles.');
+    const data = await response.json().catch(() => null);
+    if (!data) throw new Error('Réponse inattendue de la liste des modèles.');
 
-  const list =
-    connection.type === 'ollama'
-      ? data.models || []
-      : Array.isArray(data.data)
-        ? data.data
-        : Array.isArray(data.models)
-          ? data.models
-          : [];
+    const list =
+      connection.type === 'ollama'
+        ? data.models || []
+        : Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data.models)
+            ? data.models
+            : [];
 
-  const models = list.map((item) => item.id || item.name || item.model).filter(Boolean);
-  return [...new Set(models)].sort((a, b) => a.localeCompare(b)).slice(0, 1000);
+    models = [...new Set(list.map((item) => item.id || item.name || item.model).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b))
+      .slice(0, 1000);
+  } catch (error) {
+    if (cached) return entry.models;
+    throw error;
+  }
+
+  cache[connection.id] = { baseUrl: connection.baseUrl, at: Date.now(), models };
+  await api.storage.local.set({ modelCache: cache });
+  return models;
 }
 
 // ---------------------------------------------------------------- adapters
@@ -1327,7 +1350,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'lili:list-models') {
-    return respond(listModels(message.connection).then((models) => ({ ok: true, models })));
+    return respond(
+      listModels(message.connection, message.refresh).then((models) => ({ ok: true, models }))
+    );
   }
 
   if (message.type === 'lili:open-options') {

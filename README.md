@@ -32,7 +32,8 @@ OpenCode Zen/Go, OpenAI, Anthropic ou Ollama.
   section, puis fusionné. Les pages longues ne sont pas tronquées silencieusement.
 - **Détection de langue FR/EN** pour la traduction automatique (`auto`), ou langue cible imposée.
 - **Routage par tâche** : une connexion et un modèle par action, avec connexion de repli.
-- **Liste des modèles** récupérable depuis chaque service (OpenRouter, OpenCode, OVHcloud…).
+- **Modèles listés automatiquement** depuis chaque service (OpenRouter, OpenCode, OVHcloud…),
+  mis en cache et proposés dans des menus déroulants.
 - Interface et prompts en français, **clair / sombre**, réglages complets.
 
 | Panneau de résultat | Routage par tâche |
@@ -88,9 +89,14 @@ Réglages → **Connexions** → choisir un préréglage → **Ajouter la connex
 | Ollama (local) | `http://localhost:11434` | modèles installés |
 | Personnalisé | — | Mistral, Groq, vLLM, LiteLLM… |
 
-Pour chaque connexion : clé API, modèle par défaut, puis **Tester** et **Charger les modèles** (la
-liste alimente les suggestions de modèles des tâches). À l’enregistrement, le navigateur demande
-l’accès aux hôtes concernés — nécessaire pour contourner CORS.
+Pour chaque connexion : clé API, modèle par défaut, puis **Tester**. Les listes de modèles sont
+récupérées automatiquement à l’ouverture des réglages (cache de 7 jours) et proposées dans des menus
+déroulants ; **Charger les modèles** force un rafraîchissement et « Autre modèle… » permet une
+saisie libre. À l’enregistrement, le navigateur demande l’accès aux hôtes concernés — nécessaire
+pour contourner CORS.
+
+Les listes viennent de `GET {base}/models` (OpenAI-compatible), `GET /v1/models` (Anthropic) et
+`GET /api/tags` (Ollama). Les bases OpenCode `/openai/v1` sont converties en `/v1/models`.
 
 ### 2. Router les tâches
 

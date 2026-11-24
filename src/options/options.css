@@ -282,3 +282,9 @@ button.ghost.danger { color: var(--danger); }
   .route { grid-template-columns: 1fr 1fr; }
   .route-name { grid-column: 1 / -1; }
 }
+
+.conn-count { font-size: 11px; color: var(--muted); }
+
+.picker { display: flex; gap: 4px; min-width: 0; }
+.picker select,
+.picker input { flex: 1; min-width: 0; }

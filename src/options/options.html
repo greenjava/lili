@@ -155,13 +155,12 @@
       <span id="status" class="status" role="status"></span>
     </footer>
 
-    <div id="datalists"></div>
-
     <template id="connection-template">
       <article class="conn">
         <div class="conn-head">
           <strong class="conn-title"></strong>
           <span class="badge conn-badge"></span>
+          <span class="conn-count"></span>
           <div class="conn-actions">
             <button type="button" class="ghost" data-act="models">Charger les modèles</button>
             <button type="button" class="ghost" data-act="test">Tester</button>
@@ -192,7 +191,7 @@
         <div class="grid">
           <div class="field">
             <label>Modèle par défaut</label>
-            <input data-field="model" type="text" spellcheck="false" />
+            <div class="picker-slot" data-field="model"></div>
           </div>
           <div class="field">
             <label>Clé API</label>
@@ -211,7 +210,7 @@
       <div class="route">
         <span class="route-name"></span>
         <select data-route="connection"></select>
-        <input data-route="model" type="text" spellcheck="false" placeholder="modèle" />
+        <div class="picker-slot" data-route="model"></div>
       </div>
     </template>
 
