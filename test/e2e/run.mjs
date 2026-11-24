@@ -206,6 +206,8 @@ async function main() {
       `--disable-extensions-except=${EXT}`,
       `--load-extension=${EXT}`,
       '--window-size=1280,900',
+      // GitHub runners disable unprivileged user namespaces.
+      ...(process.env.CI ? ['--no-sandbox', '--disable-dev-shm-usage'] : []),
     ],
     defaultViewport: { width: 1280, height: 900 },
   });
