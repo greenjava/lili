@@ -208,8 +208,8 @@ aussi de traiter un texte collé.
 
 ## Développement
 
-Prérequis : Node.js 20.11 ou ultérieur ; Python avec Pillow pour générer les icônes ; Chrome pour les
-tests de bout en bout.
+Prérequis : Node.js 20.11 ou ultérieur ; Python avec Pillow pour générer les icônes ; le binaire
+`zip` pour le packaging ; Chrome pour les tests de bout en bout.
 
 ```bash
 npm ci                # dépendances de test et de packaging

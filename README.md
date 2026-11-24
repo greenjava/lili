@@ -201,8 +201,8 @@ also handles pasted text.
 
 ## Development
 
-Requirements: Node.js 20.11 or later; Python with Pillow for icon generation; Chrome for the
-end-to-end tests.
+Requirements: Node.js 20.11 or later; Python with Pillow for icon generation; the `zip` binary for
+packaging; Chrome for the end-to-end tests.
 
 ```bash
 npm ci                # test and packaging dependencies
