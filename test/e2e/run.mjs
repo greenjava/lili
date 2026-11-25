@@ -127,13 +127,26 @@ async function shadow(page, expr) {
 }
 
 async function waitBar(page) {
-  await page.waitForFunction(
-    () => {
+  try {
+    await page.waitForFunction(
+      () => {
+        const bar = document.getElementById('lili-root')?.shadowRoot?.querySelector('.lili-bar');
+        return bar && !bar.hidden;
+      },
+      { timeout: 8000 }
+    );
+  } catch (error) {
+    const state = await page.evaluate(() => {
+      const active = document.activeElement;
       const bar = document.getElementById('lili-root')?.shadowRoot?.querySelector('.lili-bar');
-      return bar && !bar.hidden;
-    },
-    { timeout: 8000 }
-  );
+      return {
+        active: active ? active.tagName + (active.id ? '#' + active.id : '') : null,
+        selection: (window.getSelection()?.toString() || '').slice(0, 60),
+        barHidden: bar ? bar.hidden : 'missing',
+      };
+    });
+    throw new Error(error.message + ' ' + JSON.stringify(state));
+  }
 }
 
 async function waitResult(page) {
@@ -179,15 +192,17 @@ async function shot(page, name) {
 }
 
 async function selectTextarea(page, id) {
-  await page.evaluate((elementId) => {
-    const el = document.getElementById(elementId);
-    el.scrollIntoView({ block: 'center' });
-    el.focus();
-    // Drop any leftover document selection so the field selection wins.
-    window.getSelection()?.removeAllRanges();
-    el.setSelectionRange(0, el.value.length);
+  // Real mouse and keyboard interaction: a synthetic focus is not reliable
+  // after a contenteditable replacement, and the page selection can stay stale.
+  await page.$eval('#' + id, (el) => el.scrollIntoView({ block: 'center' }));
+  const box = await (await page.$('#' + id)).boundingBox();
+  await page.mouse.click(box.x + 10, box.y + 10);
+  await page.keyboard.down('Control');
+  await page.keyboard.press('KeyA');
+  await page.keyboard.up('Control');
+  await page.evaluate(() => {
     document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: 10, clientY: 10 }));
-  }, id);
+  });
 }
 
 async function selectElement(page, id) {
