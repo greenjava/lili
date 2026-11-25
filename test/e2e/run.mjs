@@ -542,6 +542,44 @@ async function main() {
       JSON.stringify(richInserted)
     );
 
+    // 3b. Markdown source: the syntax must stay literal in plain fields
+    await selectTextarea(demo, 'markdown-field');
+    await waitBar(demo);
+    await clickAction(demo, 'translate');
+    await waitResult(demo);
+    await clickUi(demo, 'replace');
+    await demo.waitForFunction(
+      () => !!document.getElementById('lili-root')?.shadowRoot?.querySelector('.lili-diff'),
+      { timeout: 5000 }
+    );
+    await clickUi(demo, 'confirm');
+    await sleep(250);
+    const markdownField = await demo.$eval('#markdown-field', (el) => el.value);
+    check(
+      'markdown : syntaxe conservée dans un champ',
+      markdownField.includes('**Translated title**') && markdownField.includes('- First line'),
+      markdownField
+    );
+
+    // 3c. Markdown source in a contenteditable must not be rendered to HTML
+    await selectElement(demo, 'markdown-editable');
+    await waitBar(demo);
+    await clickAction(demo, 'translate');
+    await waitResult(demo);
+    await clickUi(demo, 'replace');
+    await demo.waitForFunction(
+      () => !!document.getElementById('lili-root')?.shadowRoot?.querySelector('.lili-diff'),
+      { timeout: 5000 }
+    );
+    await clickUi(demo, 'confirm');
+    await sleep(250);
+    const markdownEditable = await demo.$eval('#markdown-editable', (el) => el.innerText);
+    check(
+      'markdown : syntaxe conservée dans contenteditable',
+      markdownEditable.includes('**Translated title**'),
+      markdownEditable
+    );
+
     // 4. Keyboard fallback (page-level listener)
     await selectElement(demo, 'editable');
     await waitBar(demo);

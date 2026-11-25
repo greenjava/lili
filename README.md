@@ -42,12 +42,14 @@ intermediate server.
 - **Per-site rules**: disable the floating toolbar on chosen domains and force a translation target
   (`domain = fr`).
 - **Lightweight Markdown rendering** for results: headings, lists, bold/italic, inline code and
-  quotes. Copy and replace always use the raw text; rendering can be disabled in the settings.
+  quotes. Copy strips the Markdown markers; replace inserts the raw text, so Markdown typed in a
+  field is preserved. Rendering can be disabled in the settings.
 - **In-place replacement** in `input`, `textarea` and `contenteditable` fields, with undo
   (`Ctrl+Z` / `Cmd+Z`) and an optional automatic replacement mode.
 - **Formatting preservation**: rich selections are captured as Markdown (line breaks, bold/italic,
   lists, headings), sent with a formatting instruction, and rendered as Markdown. Replacing in a
-  `contenteditable` field inserts formatted HTML; plain inputs receive plain text.
+  rich `contenteditable` inserts formatted HTML; plain fields keep the translated text as-is and a
+  Markdown source editor keeps its raw syntax.
 - **Page summaries with map-reduce**: the main content is extracted, split into sections, summarized
   section by section, then merged. Long pages are not silently truncated.
 - **Per-task routing**: one connection and one model per action, with a fallback connection.

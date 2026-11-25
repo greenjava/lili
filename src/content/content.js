@@ -1001,6 +1001,30 @@
       .trim();
   }
 
+  /** True when the text already uses Markdown syntax that must stay literal. */
+  function looksLikeMarkdown(text) {
+    const value = String(text || '');
+    return (
+      /```/.test(value) ||
+      /^#{1,6}\s/m.test(value) ||
+      /^>\s/m.test(value) ||
+      /^\s*(?:[-*+]|\d+[.)])\s+/m.test(value) ||
+      /\*\*[^*\n]+\*\*/.test(value) ||
+      /__[^_\n]+__/.test(value) ||
+      /`[^`\n]+`/.test(value) ||
+      /\[[^\]\n]+\]\([^)\n]+\)/.test(value) ||
+      /(^|[\s(])\*[^*\n]+\*(?=$|[\s.,;:!?)])/m.test(value)
+    );
+  }
+
+  /** Text actually inserted, used by the diff preview. */
+  function insertionPreview(selection, text) {
+    if (selection && selection.kind === 'contenteditable' && !looksLikeMarkdown(selection.text)) {
+      return markdownToPlain(text);
+    }
+    return text;
+  }
+
   function setResultView() {
     if (!ui || !job) return;
 
@@ -1681,7 +1705,7 @@
     ui.confirmBtn.hidden = false;
     ui.cancelBtn.hidden = false;
     ui.body.scrollTop = 0;
-    renderDiff(lastRequest.selection.text, markdownToPlain(job.text.trim()));
+    renderDiff(lastRequest.selection.text, insertionPreview(lastRequest.selection, job.text.trim()));
     setStatus(t('panel_compare_hint'));
   }
 
@@ -1779,10 +1803,14 @@
   function replaceSelection(selection, text) {
     if (!selection) return false;
     if (selection.kind === 'input') {
-      return replaceInField(selection.el, selection.start, selection.end, markdownToPlain(text));
+      // Plain fields are text: keep the Markdown the user typed.
+      return replaceInField(selection.el, selection.start, selection.end, text);
     }
     if (selection.kind === 'contenteditable') {
-      return replaceInEditable(selection.el, selection.range, text);
+      // A Markdown source editor must receive the raw syntax, not rendered HTML.
+      return replaceInEditable(selection.el, selection.range, text, {
+        raw: looksLikeMarkdown(selection.text),
+      });
     }
     return false;
   }
@@ -1881,15 +1909,16 @@
     return html;
   }
 
-  function replaceInEditable(el, range, markdown) {
+  function replaceInEditable(el, range, markdown, options = {}) {
     if (!el || !el.isConnected) return false;
 
-    const plain = markdownToPlain(markdown);
-    const fragment = renderMarkdown(markdown);
-    const formatted = !!fragment.querySelector(
+    const raw = !!options.raw;
+    const plain = raw ? markdown : markdownToPlain(markdown);
+    const fragment = raw ? null : renderMarkdown(markdown);
+    const formatted = !!fragment && !!fragment.querySelector(
       'strong, em, ul, ol, li, h1, h2, h3, h4, h5, h6, blockquote, pre, code'
     );
-    const hasBlock = !!fragment.querySelector(
+    const hasBlock = !!fragment && !!fragment.querySelector(
       'ul, ol, li, pre, blockquote, h1, h2, h3, h4, h5, h6'
     );
 

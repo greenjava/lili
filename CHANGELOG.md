@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Inline replacement no longer drops Markdown syntax: text fields keep the markers, and a Markdown
+  source editor receives the raw text instead of rendered HTML.
+
 ## [0.4.1] - 2026-11-25
 
 ### Added

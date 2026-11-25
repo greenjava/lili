@@ -42,14 +42,14 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
 - **Règles par site** : désactiver la barre flottante sur certains domaines et forcer une langue
   cible (`domaine = fr`).
 - **Rendu Markdown léger** des résultats : titres, listes, gras/italique, code inline et citations.
-  Copier et Remplacer utilisent toujours le texte brut ; le rendu peut être désactivé dans les
-  réglages.
+  Copier retire les marqueurs Markdown ; Remplacer insère le texte brut, donc le Markdown saisi dans
+  un champ est conservé. Le rendu peut être désactivé dans les réglages.
 - **Remplacement sur place** dans les champs `input`, `textarea` et `contenteditable`, avec annulation
   (`Ctrl+Z` / `Cmd+Z`) et un mode de remplacement automatique optionnel.
 - **Conservation du formatage** : les sélections riches sont capturées en Markdown (retours à la
   ligne, gras/italique, listes, titres), envoyées avec une consigne de formatage et rendues en
-  Markdown. Le remplacement dans un `contenteditable` insère du HTML formaté ; les champs simples
-  reçoivent du texte brut.
+  Markdown. Le remplacement dans un `contenteditable` riche insère du HTML formaté ; les champs
+  simples conservent le texte traduit tel quel et un éditeur Markdown garde sa syntaxe brute.
 - **Résumé de page en map-reduce** : le contenu principal est extrait, découpé en sections, résumé
   section par section, puis fusionné. Les pages longues ne sont pas tronquées silencieusement.
 - **Routage par tâche** : une connexion et un modèle par action, avec une connexion de repli.

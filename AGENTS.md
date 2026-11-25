@@ -150,7 +150,7 @@ npx @puppeteer/browsers install chrome@stable --path .cache/chrome
 CHROME_PATH=$(find .cache/chrome -type f -name chrome | head -n 1) npm run test:e2e
 ```
 
-The suite has 55 assertions and forces the French UI locale (`LANGUAGE=fr`). Run it after any change
+The suite has 57 assertions and forces the French UI locale (`LANGUAGE=fr`). Run it after any change
 to routing, providers, the panel, the popup or the options page. Set `E2E_ARTIFACTS=1` to write
 screenshots to `test/e2e/artifacts`.
 
