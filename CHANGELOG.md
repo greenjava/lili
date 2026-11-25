@@ -29,12 +29,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - GitHub Actions workflows now run on Node 24 runtimes.
-- Default shortcuts now use `Ctrl+Shift` combinations (`Y`, `U`, `H`, `1`), because Chrome refused to
+- Default shortcuts now use `Ctrl+Shift` combinations (`Y`, `U`, `H`, `E`), because Chrome refused to
   assign `Alt+Shift+T` and `Alt+Shift+R`, and `Alt+Shift` is often the Linux layout switch.
 
 ### Fixed
 
-- Chrome now assigns all four default keyboard shortcuts; they can still be customized in
+- Chrome now assigns all four default keyboard shortcuts; a page-level fallback also handles them
+  when the browser does not deliver the command. They can still be customized in
   `chrome://extensions/shortcuts`.
 
 ## [0.3.0] - 2026-11-24

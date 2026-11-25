@@ -73,7 +73,7 @@
     },
     "summarize-page": {
       "suggested_key": {
-        "default": "Ctrl+Shift+1"
+        "default": "Ctrl+Shift+E"
       },
       "description": "Résumer la page"
     }

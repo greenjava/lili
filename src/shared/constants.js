@@ -40,7 +40,7 @@
     summarize_page: {
       label: 'Résumer la page',
       short: 'Page',
-      hint: 'Résumer le contenu de la page (Ctrl+Maj+1)',
+      hint: 'Résumer le contenu de la page (Ctrl+Maj+E)',
       icon: 'page',
       editable: false,
     },

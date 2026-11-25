@@ -2059,6 +2059,70 @@
     return { title, url: location.href, text: text.slice(0, 200000) };
   }
 
+  // Fallback for when the browser does not deliver the command shortcut.
+  const SHORTCUT_ACTIONS = {
+    KeyY: 'translate',
+    KeyU: 'rephrase',
+    KeyH: 'summarize',
+    KeyE: 'summarize_page',
+  };
+
+  let pendingShortcut = null;
+  let lastShortcutRun = { action: '', at: 0 };
+
+  function shortcutFor(event) {
+    if (event.defaultPrevented || event.repeat || event.altKey) return '';
+    if (!(event.ctrlKey || event.metaKey) || !event.shiftKey) return '';
+    return SHORTCUT_ACTIONS[event.code] || '';
+  }
+
+  function runShortcut(action) {
+    if (!action) return;
+
+    const now = Date.now();
+    if (lastShortcutRun.action === action && now - lastShortcutRun.at < 600) return;
+    lastShortcutRun = { action, at: now };
+
+    const request = buildRequest(action, {});
+    if (request) runRequest(request);
+    else if (action !== 'summarize_page') toast('Sélectionne d’abord du texte.');
+  }
+
+  function scheduleShortcut(action) {
+    const now = Date.now();
+    if (lastShortcutRun.action === action && now - lastShortcutRun.at < 600) return;
+
+    if (pendingShortcut) clearTimeout(pendingShortcut.timer);
+    pendingShortcut = {
+      action,
+      timer: setTimeout(() => {
+        pendingShortcut = null;
+        runShortcut(action);
+      }, 120),
+    };
+  }
+
+  function cancelPendingShortcut(action) {
+    if (pendingShortcut && pendingShortcut.action === action) {
+      clearTimeout(pendingShortcut.timer);
+      pendingShortcut = null;
+    }
+  }
+
+  document.addEventListener(
+    'keydown',
+    (event) => {
+      if (insideUI(event)) return;
+      const action = shortcutFor(event);
+      if (!action) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      scheduleShortcut(action);
+    },
+    true
+  );
+
   // ---------------------------------------------------------------- listeners
 
   function scheduleCapture() {
@@ -2153,6 +2217,15 @@
         sendResponse({ ok: false, error: 'Action inconnue : ' + action });
         return;
       }
+
+      cancelPendingShortcut(action);
+
+      const now = Date.now();
+      if (lastShortcutRun.action === action && now - lastShortcutRun.at < 600) {
+        sendResponse({ ok: true, duplicate: true });
+        return;
+      }
+      lastShortcutRun = { action, at: now };
 
       if (message.text && String(message.text).trim()) {
         const text = String(message.text);

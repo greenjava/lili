@@ -530,7 +530,27 @@ async function main() {
       JSON.stringify(richInserted)
     );
 
-    // 4. Résumé de sélection
+    // 4. Keyboard fallback (page-level listener)
+    await selectElement(demo, 'editable');
+    await waitBar(demo);
+    await demo.evaluate(() => {
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'u',
+          code: 'KeyU',
+          ctrlKey: true,
+          shiftKey: true,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+    });
+    await waitResult(demo);
+    const shortcutResult = await panelText(demo);
+    check('raccourcis : fallback dans la page', shortcutResult.includes('reformulation claire'), shortcutResult);
+    await clickUi(demo, 'close');
+
+    // 5. Résumé de sélection
     await selectElement(demo, 'editable');
     await waitBar(demo);
     await clickAction(demo, 'summarize');
@@ -540,7 +560,7 @@ async function main() {
     check('résumé de sélection : puces reçues', summary.includes('Il conserve les chiffres'), summary);
     check('résumé : pas de bouton remplacer', !(await shadow(demo, "!root.querySelector('[data-ui=\"replace\"]').hidden")));
 
-    // 5. Résumé de page (map-reduce)
+    // 6. Résumé de page (map-reduce)
     await selectElement(demo, 'editable');
     await waitBar(demo);
     await clickAction(demo, 'summarize_page');
@@ -575,7 +595,7 @@ async function main() {
 
     await shot(demo, '04-panel-page-summary');
 
-    // 6. Follow-up actions
+    // 7. Follow-up actions
     await shadow(demo, "root.querySelector('[data-followup=\"refine_shorter\"]').click()");
     await waitResult(demo);
     const refined = await panelText(demo);
@@ -590,7 +610,7 @@ async function main() {
       restored.slice(0, 80)
     );
 
-    // 7. Stop a running generation
+    // 8. Stop a running generation
     await shadow(demo, "root.querySelector('[data-followup=\"refine_longer\"]').click()");
     await demo.waitForFunction(
       () => {
@@ -612,7 +632,7 @@ async function main() {
     check('arrêt : génération stoppée', /arrêtée/i.test(stoppedStatus), stoppedStatus);
     check('arrêt : panneau conservé', !(await shadow(demo, "root.querySelector('.lili-panel').hidden")));
 
-    // 8. History and favorites
+    // 9. History and favorites
     await sleep(400);
     await clickUi(demo, 'history');
     await demo.waitForFunction(
@@ -645,7 +665,7 @@ async function main() {
     check('historique : résultat réouvert', historyText.length > 10, historyText.slice(0, 60));
     await clickUi(demo, 'close');
 
-    // 9. Selection context
+    // 10. Selection context
     await options.evaluate(
       (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
       { ...SETTINGS, ui: { ...SETTINGS.ui, context: true } }
@@ -668,7 +688,7 @@ async function main() {
     check('contexte : paragraphe transmis', contextResult.startsWith('[CONTEXT]'), contextResult.slice(0, 60));
     await clickUi(demo, 'close');
 
-    // 10. Direct mode
+    // 11. Direct mode
     await options.evaluate(
       (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
       { ...SETTINGS, ui: { ...SETTINGS.ui, directMode: true } }
@@ -689,7 +709,7 @@ async function main() {
     const directPanelHidden = await shadow(demo, "root.querySelector('.lili-panel').hidden");
     check('mode direct : champ remplacé sans panneau', directPanelHidden);
 
-    // 11. Remplacement automatique (option)
+    // 12. Remplacement automatique (option)
     await options.evaluate((settings) => {
       return new Promise((resolve) => chrome.storage.local.set({ settings }, resolve));
     }, { ...SETTINGS, ui: { ...SETTINGS.ui, autoReplace: true } });
@@ -711,7 +731,7 @@ async function main() {
     check('remplacement auto : champ mis à jour', autoValue === TRANSLATION, autoValue);
     check('remplacement auto : panneau refermé', autoPanelHidden);
 
-    // 12. Site rules
+    // 13. Site rules
     await options.evaluate(
       (settings) => new Promise((resolve) => chrome.storage.local.set({ settings }, resolve)),
       { ...SETTINGS, siteRules: { disabled: ['127.0.0.1'], targets: {} } }
@@ -744,7 +764,7 @@ async function main() {
     );
     await clickUi(demo, 'close');
 
-    // 13. Chemin d'erreur (API injoignable)
+    // 14. Chemin d'erreur (API injoignable)
     await options.evaluate((settings) => {
       return new Promise((resolve) => chrome.storage.local.set({ settings }, resolve));
     }, (() => {

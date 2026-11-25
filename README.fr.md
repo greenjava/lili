@@ -22,7 +22,7 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
 | Reformuler puis traduire | oui | **remplace sur place** | — |
 | Résumer | oui | panneau de résultat | `Ctrl+Maj+H` |
 | Corriger l’orthographe et la grammaire | oui | **remplace sur place** | — |
-| Résumer la page entière | — | — | `Ctrl+Maj+1` |
+| Résumer la page entière | — | — | `Ctrl+Maj+E` |
 
 - **Barre flottante** près de la sélection, **menu contextuel** (clic droit), **popup** (sélection
   courante, texte collé ou page entière) et **raccourcis clavier**.
@@ -202,7 +202,7 @@ OLLAMA_ORIGINS="*" ollama serve
 Faites glisser le panneau par son en-tête pour le déplacer, et redimensionnez-le par la poignée en bas
 à droite. La taille choisie est conservée pour les résultats suivants.
 
-Le bouton **Page** de la barre, le popup et `Ctrl+Maj+1` résument la page courante. Le popup permet
+Le bouton **Page** de la barre, le popup et `Ctrl+Maj+E` résument la page courante. Le popup permet
 aussi de traiter un texte collé.
 
 ## Confidentialité
@@ -249,7 +249,7 @@ aussi de traiter un texte collé.
 | « 403 » avec OpenCode | Les modèles gratuits sont réservés au client OpenCode : utilisez un modèle payant ou Go. |
 | Pas de barre sur une page | Page interne du navigateur, PDF, sélection dans une iframe, ou barre désactivée dans les réglages. |
 | Rien ne se passe après un rechargement de l’extension | Rechargez l’onglet : les content scripts ne sont pas réinjectés dans les pages déjà ouvertes. |
-| Un raccourci clavier ne fait rien | Chrome peut ne pas assigner un raccourci suggéré en cas de conflit. Vérifiez `chrome://extensions/shortcuts` et définissez-le manuellement. `Alt+Maj` est aussi le changement de disposition clavier sur beaucoup de bureaux Linux ; les valeurs par défaut utilisent `Ctrl+Maj` pour cette raison. |
+| Un raccourci clavier ne fait rien | Chrome peut ne pas assigner un raccourci suggéré en cas de conflit. Vérifiez `chrome://extensions/shortcuts` et définissez-le manuellement. `Alt+Maj` est aussi le changement de disposition clavier sur beaucoup de bureaux Linux ; les valeurs par défaut utilisent `Ctrl+Maj` pour cette raison. Les raccourcis sont gérés par la commande du navigateur et par un fallback dans le content script, ce qui les fait fonctionner même si Chrome ne délivre pas la commande. Les pages internes du navigateur n’utilisent que la commande. |
 
 ## Développement
 

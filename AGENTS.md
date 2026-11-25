@@ -212,6 +212,9 @@ the options page. Set `E2E_ARTIFACTS=1` to write screenshots to `test/e2e/artifa
 - Chrome may leave a suggested command shortcut unassigned on conflict. Verify with
   `chrome.commands.getAll()` (the e2e suite asserts four assigned shortcuts); do not use
   `Alt+Shift` defaults on Linux, where it is often the layout switch.
+- Shortcuts are handled twice: `chrome.commands` in the background and a `keydown` fallback in the
+  content script. Keep the `lastShortcutRun` deduplication so a single key press never starts two
+  requests.
 
 ## Definition of done
 
