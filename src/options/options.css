@@ -288,3 +288,7 @@ button.ghost.danger { color: var(--danger); }
 .picker { display: flex; gap: 4px; min-width: 0; }
 .picker select,
 .picker input { flex: 1; min-width: 0; }
+
+.shortcut-state { margin-left: 6px; font-size: 11px; color: var(--muted); }
+.shortcut-state.warn { color: var(--warn); font-weight: 600; }
+#shortcuts-status { min-height: 18px; }

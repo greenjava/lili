@@ -174,15 +174,35 @@
       <section class="card">
         <h2>Raccourcis</h2>
         <dl class="keys">
-          <div><dt>Ctrl + Maj + Y</dt><dd>Traduire la sélection</dd></div>
-          <div><dt>Ctrl + Maj + U</dt><dd>Reformuler la sélection</dd></div>
-          <div><dt>Ctrl + Maj + H</dt><dd>Résumer la sélection</dd></div>
-          <div><dt>Ctrl + Maj + E</dt><dd>Résumer la page</dd></div>
+          <div>
+            <dt>Ctrl + Maj + Y</dt>
+            <dd>Traduire la sélection <span class="shortcut-state" data-shortcut="translate-selection"></span></dd>
+          </div>
+          <div>
+            <dt>Ctrl + Maj + U</dt>
+            <dd>Reformuler la sélection <span class="shortcut-state" data-shortcut="rephrase-selection"></span></dd>
+          </div>
+          <div>
+            <dt>Ctrl + Maj + H</dt>
+            <dd>Résumer la sélection <span class="shortcut-state" data-shortcut="summarize-selection"></span></dd>
+          </div>
+          <div>
+            <dt>Ctrl + Maj + E</dt>
+            <dd>Résumer la page <span class="shortcut-state" data-shortcut="summarize-page"></span></dd>
+          </div>
         </dl>
         <p class="hint">
-          Personnalisables dans <code>chrome://extensions/shortcuts</code> ou
-          <code>about:addons</code> → roue dentée → « Gérer les raccourcis ».
+          Chrome peut conserver un ancien raccourci ou laisser le champ vide après une mise à jour.
+          Cliquez sur le crayon dans <code>chrome://extensions/shortcuts</code> (Firefox :
+          <code>about:addons</code> → « Gérer les raccourcis ») pour l’assigner. Les raccourcis
+          fonctionnent aussi directement dans la page, même si Chrome les affiche comme non assignés.
         </p>
+        <div class="row">
+          <button type="button" id="copy-shortcuts-url" class="secondary">
+            Copier l’adresse des raccourcis
+          </button>
+          <span id="shortcuts-status" class="hint"></span>
+        </div>
       </section>
     </main>
 

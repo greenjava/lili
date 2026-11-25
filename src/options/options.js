@@ -659,6 +659,27 @@
     updateCounts();
   }
 
+  async function refreshShortcutStatus() {
+    const states = document.querySelectorAll('[data-shortcut]');
+    if (!states.length || !api.commands || !api.commands.getAll) return;
+
+    let commands = [];
+    try {
+      commands = await api.commands.getAll();
+    } catch {
+      return;
+    }
+
+    const shortcuts = {};
+    for (const command of commands) shortcuts[command.name] = command.shortcut || '';
+
+    for (const state of states) {
+      const shortcut = shortcuts[state.getAttribute('data-shortcut')] || '';
+      state.textContent = shortcut ? 'assigné · ' + shortcut : 'non assigné';
+      state.classList.toggle('warn', !shortcut);
+    }
+  }
+
   async function save() {
     collectStatic();
 
@@ -786,6 +807,28 @@
     autoLoadModels();
   }
 
+  const shortcutsUrl = navigator.userAgent.includes('Firefox')
+    ? 'about:addons'
+    : 'chrome://extensions/shortcuts';
+
+  $('#copy-shortcuts-url').addEventListener('click', async () => {
+    const status = $('#shortcuts-status');
+    try {
+      await navigator.clipboard.writeText(shortcutsUrl);
+      status.textContent = 'Adresse copiée : ' + shortcutsUrl;
+    } catch {
+      status.textContent = 'Adresse : ' + shortcutsUrl;
+    }
+    setTimeout(() => {
+      status.textContent = '';
+    }, 3000);
+  });
+
+  window.addEventListener('focus', refreshShortcutStatus);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshShortcutStatus();
+  });
+
   $('#save').addEventListener('click', save);
   $('#reset').addEventListener('click', reset);
   $('#add-connection').addEventListener('click', addPreset);
@@ -811,6 +854,7 @@
     try {
       const settings = await send({ type: 'lili:get-settings' });
       if (settings) load(settings);
+      refreshShortcutStatus();
     } catch (error) {
       setStatus('Impossible de charger les réglages : ' + ((error && error.message) || error), 'err');
     }

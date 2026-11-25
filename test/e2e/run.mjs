@@ -305,6 +305,15 @@ async function main() {
       JSON.stringify({ c: filled.translateConnection, m: filled.translateModel })
     );
     check('options : actions cochées', filled.actions === 5, String(filled.actions));
+
+    await options.waitForFunction(
+      () => {
+        const states = Array.from(document.querySelectorAll('.shortcut-state'));
+        return states.length === 4 && states.every((state) => state.textContent.includes('assigné'));
+      },
+      { timeout: 5000 }
+    );
+    check('options : raccourcis assignés affichés', true);
     await options.evaluate(() => window.scrollTo(0, 0));
     await shot(options, '01-options');
     await options.evaluate(() => document.querySelector('#routes').scrollIntoView({ block: 'center' }));
