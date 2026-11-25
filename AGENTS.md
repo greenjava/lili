@@ -12,7 +12,8 @@ configured API; there is no backend.
 - Manifest V3 for both browsers, one shared source tree.
 - Chrome 116+, Firefox 142+.
 - No runtime dependencies, no bundler, no build step for the JavaScript.
-- UI and prompts are in French; code, identifiers, comments and commits are in English.
+- The UI is localized in English (default) and French via `_locales`; prompts are in French. Code,
+  identifiers, comments and commits are in English.
 - License: MPL-2.0.
 
 ## Non-negotiable rules
@@ -36,8 +37,9 @@ configured API; there is no backend.
   (`lili:*`), the port name (`lili-stream`) or CSS prefixes (`lili-*`) without a migration.
 - Do not edit `dist/`, `node_modules/`, `.cache/` or `test/e2e/artifacts/`; they are generated or
   ignored.
-- User-visible strings stay in French. Code identifiers and comments stay in English, comments
-  short.
+- User-visible strings live in `src/_locales/en|fr/messages.json` and are referenced through
+  `chrome.i18n`. English is the default locale; both catalogs must stay in sync. Code identifiers and
+  comments stay in English, comments short.
 - Both READMEs must stay in sync: `README.md` (English, default) and `README.fr.md` (French).
 
 ## Repository map
@@ -47,6 +49,8 @@ src/background.js        settings, menus, shortcuts, providers, prompts, streami
 src/content/content.js   selection capture, toolbar, panel, page extraction, replacement
 src/content/styles.js    shadow-root CSS (CSSStyleSheet text)
 src/shared/constants.js  action metadata shared by content, popup and options
+src/shared/i18n.js       chrome.i18n helper for content scripts
+src/_locales/en|fr/      UI messages (English default, French)
 src/options/             connections, per-task routing, settings page
 src/popup/               quick actions popup
 src/manifest.base.json   shared manifest; chrome/firefox files are merged over it
@@ -145,15 +149,16 @@ npx @puppeteer/browsers install chrome@stable --path .cache/chrome
 CHROME_PATH=$(find .cache/chrome -type f -name chrome | head -n 1) npm run test:e2e
 ```
 
-The suite has 37 assertions. Run it after any change to routing, providers, the panel, the popup or
-the options page. Set `E2E_ARTIFACTS=1` to write screenshots to `test/e2e/artifacts`.
+The suite has 55 assertions and forces the French UI locale (`LANGUAGE=fr`). Run it after any change
+to routing, providers, the panel, the popup or the options page. Set `E2E_ARTIFACTS=1` to write
+screenshots to `test/e2e/artifacts`.
 
 ## Change checklists
 
 ### Add an action
 
 1. `src/shared/constants.js`: add to `ACTIONS`, `SELECTION_ACTIONS` and, if replaceable,
-   `REPLACEABLE`.
+   `REPLACEABLE`, and add its `labelKey` / `shortKey` / `hintKey` to both locales.
 2. `src/background.js`: add the id to `known`, add a prompt branch in `buildMessages`, add the
    routing default.
 3. `src/options/options.js`: add the id to `TASKS` (or to `FOLLOW_UPS` for refinements).
@@ -170,12 +175,13 @@ the options page. Set `E2E_ARTIFACTS=1` to write screenshots to `test/e2e/artifa
 ### Change settings
 
 1. Update `DEFAULT_SETTINGS` and `migrateSettings` in `src/background.js`.
-2. Update `options.js` (`load`, `collectStatic`, `serialize`) and the options HTML.
+2. Update `options.js` (`load`, `collectStatic`, `serialize`) and the options HTML, with
+   `data-i18n` attributes for new labels.
 3. Update the e2e settings object and the READMEs.
 
 ### Change the UI
 
-1. Keep text French and CSS under `lili-*`.
+1. Keep UI strings in both locales and CSS under `lili-*`.
 2. Re-run the e2e suite and refresh `docs/*.png` from the artifacts if the look changed.
 3. Keep the panel usable when the meta text is long (`min-width: 0` on the flex item) and keep the
    close button inside the panel.
