@@ -181,7 +181,10 @@ async function shot(page, name) {
 async function selectTextarea(page, id) {
   await page.evaluate((elementId) => {
     const el = document.getElementById(elementId);
+    el.scrollIntoView({ block: 'center' });
     el.focus();
+    // Drop any leftover document selection so the field selection wins.
+    window.getSelection()?.removeAllRanges();
     el.setSelectionRange(0, el.value.length);
     document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: 10, clientY: 10 }));
   }, id);
