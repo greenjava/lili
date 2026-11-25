@@ -11,6 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- New logo: the fairy on a daisy for the large branding, the daisy alone for the
+  extension icons.
 - Localized interface: English and French catalogs (`_locales`), following the browser language with
   English as the default. Menus, options, popup, floating bar and result panel are translated.
 - Formatting preservation: rich selections are captured as Markdown, rendered after translation, and

@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="Lili" width="160"></p>
+
 # Lili
 
 [English](README.md) · **Français**

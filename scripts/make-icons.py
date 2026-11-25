@@ -1,49 +1,64 @@
 #!/usr/bin/env python3
-"""Generate the extension PNG icons (Pillow only)."""
+"""Generate the extension icons and the large logo from the source artwork.
+
+Sources (assets/, not shipped):
+  icon-flower.png  daisy only, used for the toolbar/store icons
+  logo-fairy.png   fairy on the daisy, used for the options header and README
+
+Outputs:
+  src/icons/icon-*.png  transparent square icons
+  src/icons/logo.png    large logo shipped with the extension
+  docs/logo.png         copy used by the READMEs
+"""
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
+ASSETS = ROOT / "assets"
 OUT = ROOT / "src" / "icons"
-FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+DOCS = ROOT / "docs"
 
-S = 512  # 4x render, then downscale (antialiasing)
-RADIUS = 112
-START = (99, 102, 241)   # #6366F1
-END = (168, 85, 247)     # #A855F7
+ICON_SIZES = (16, 32, 48, 128)
+LOGO_SIZE = 512
+PADDING = 0.04  # share of the final square kept empty around the artwork
 
 
-def gradient(size: int) -> Image.Image:
-    image = Image.new("RGB", (size, size))
-    pixels = image.load()
-    for y in range(size):
-        for x in range(size):
-            t = (x + y) / (2 * (size - 1))
-            pixels[x, y] = tuple(
-                round(START[i] + (END[i] - START[i]) * t) for i in range(3)
-            )
-    return image
+def square(image: Image.Image, size: int, padding: float = PADDING) -> Image.Image:
+    """Trim transparent margins, then fit the artwork into a transparent square."""
+    image = image.convert("RGBA")
+    box = image.getbbox()
+    if box:
+        image = image.crop(box)
+
+    inner = max(1, round(size * (1 - 2 * padding)))
+    ratio = min(inner / image.width, inner / image.height)
+    scaled = image.resize(
+        (max(1, round(image.width * ratio)), max(1, round(image.height * ratio))),
+        Image.LANCZOS,
+    )
+
+    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    canvas.paste(scaled, ((size - scaled.width) // 2, (size - scaled.height) // 2), scaled)
+    return canvas
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
+    DOCS.mkdir(parents=True, exist_ok=True)
 
-    canvas = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    mask = Image.new("L", (S, S), 0)
-    ImageDraw.Draw(mask).rounded_rectangle((0, 0, S - 1, S - 1), RADIUS, fill=255)
-    canvas.paste(gradient(S), (0, 0), mask)
+    flower = Image.open(ASSETS / "icon-flower.png")
+    fairy = Image.open(ASSETS / "logo-fairy.png")
 
-    draw = ImageDraw.Draw(canvas)
-    font = ImageFont.truetype(FONT, 292)
-    # "L" centered optically (more space above than below).
-    draw.text((S / 2, S / 2 + 8), "L", font=font, fill=(255, 255, 255, 255), anchor="mm")
-
-    for size in (16, 32, 48, 128):
-        icon = canvas.resize((size, size), Image.LANCZOS)
+    for size in ICON_SIZES:
         path = OUT / f"icon-{size}.png"
-        icon.save(path, "PNG", optimize=True)
+        square(flower, size).save(path, "PNG", optimize=True)
+        print(f"✓ {path.relative_to(ROOT)}")
+
+    logo = square(fairy, LOGO_SIZE)
+    for path in (OUT / "logo.png", DOCS / "logo.png"):
+        logo.save(path, "PNG", optimize=True)
         print(f"✓ {path.relative_to(ROOT)}")
 
 

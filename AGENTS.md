@@ -54,13 +54,14 @@ src/_locales/en|fr/      UI messages (English default, French)
 src/options/             connections, per-task routing, settings page
 src/popup/               quick actions popup
 src/manifest.base.json   shared manifest; chrome/firefox files are merged over it
+assets/                  source artwork for the icons and logo (not shipped)
 CHANGELOG.md             Keep a Changelog sections per version, used as release notes
 scripts/build.mjs        dist/chrome + dist/firefox (+ zips), copies LICENSE
 scripts/check.mjs        node --check on src + scripts + test/e2e, JSON validation
 scripts/verify-version.mjs  package.json vs manifest vs tag
 scripts/bump-version.mjs    set the version in package.json and manifest.base.json
 scripts/release-notes.mjs   extract the CHANGELOG section for the current tag
-scripts/make-icons.py    PNG icons (Pillow)
+scripts/make-icons.py    PNG icons and logo from assets/ (Pillow)
 test/e2e/                Chrome harness, two fake providers, demo page
 .github/workflows/       CI (dev/main/PR) and release (tags v*)
 ```
