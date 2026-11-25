@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-25
+
 ### Fixed
 
 - Inline replacement no longer drops Markdown syntax: text fields keep the markers, and a Markdown
