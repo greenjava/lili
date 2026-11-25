@@ -191,7 +191,8 @@ OLLAMA_ORIGINS="*" ollama serve
    - les **suites** affinent le résultat : *Raccourcir*, *Détailler*, *Plus formel*, *En puces*,
      *Expliquer*, avec *Retour* au résultat précédent ;
    - **Remplacer** (champs éditables) ouvre un diff avant/après ; **Confirmer** applique le
-     remplacement, `Ctrl+Z` / `Cmd+Z` annule ;
+     remplacement, `Ctrl+Z` / `Cmd+Z` annule. Le diff est court-circuité si « Remplacement
+     automatique » ou « Mode direct » est actif ; une sélection de page ne peut pas être remplacée ;
    - **Arrêter** interrompt une génération en cours et conserve le résultat partiel ;
    - **Copier** place le texte brut (sans marqueurs Markdown) dans le presse-papiers ;
    - **Relancer** rejoue la même demande ;

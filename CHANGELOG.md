@@ -20,6 +20,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Default shortcuts now use `Ctrl+Shift` combinations (`Y`, `U`, `H`, `E`), because Chrome refused to
   assign `Alt+Shift+T` and `Alt+Shift+R`, and `Alt+Shift` is often the Linux layout switch.
+- The replace button now signals the before/after comparison, and the options document when the diff
+  applies.
 
 ### Fixed
 

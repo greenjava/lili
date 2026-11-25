@@ -186,7 +186,8 @@ OLLAMA_ORIGINS="*" ollama serve
    - **Follow-ups** refine the result: *Shorten*, *Expand*, *More formal*, *Bullet points*,
      *Explain*, with *Back* to the previous result;
    - **Replace** (editable fields) opens a before/after diff; **Confirm** applies it, and
-     `Ctrl+Z` / `Cmd+Z` undoes it;
+     `Ctrl+Z` / `Cmd+Z` undoes it. The diff is skipped when *Automatic replacement* or *Direct
+     mode* is enabled; page selections cannot be replaced;
    - **Stop** interrupts a running generation and keeps the partial result;
    - **Copy** sends the plain text (Markdown markers removed) to the clipboard;
    - **Retry** runs the same request again;

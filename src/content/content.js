@@ -144,7 +144,9 @@
     const body = node('div', { class: 'lili-body' }, [text, historyView, error, status]);
     const followUps = node('div', { class: 'lili-followups', hidden: '' });
 
-    const replaceBtn = actionButton('replace', 'replace', 'Remplacer', true);
+    const replaceBtn = actionButton('replace', 'replace', 'Remplacer…', true);
+    replaceBtn.title = 'Comparer avant de remplacer';
+    replaceBtn.setAttribute('aria-label', 'Comparer avant de remplacer');
     replaceBtn.hidden = true;
     replaceBtn.disabled = true;
 
