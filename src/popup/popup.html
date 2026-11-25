@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Lili</title>
@@ -12,29 +12,38 @@
         <strong>Lili</strong>
         <span id="provider">…</span>
       </div>
-      <button type="button" id="options" class="link" title="Réglages">Réglages</button>
+      <button type="button" id="options" class="link" data-i18n-title="popup_settings" data-i18n="popup_settings">
+        Settings
+      </button>
     </header>
 
     <main>
       <section>
         <div class="section-head">
-          <span>Sélection</span>
+          <span data-i18n="popup_selection">Selection</span>
           <span id="selection-count" class="count"></span>
         </div>
-        <p id="selection-preview" class="preview">Aucune sélection détectée.</p>
+        <p id="selection-preview" class="preview" data-i18n="popup_no_selection">
+          No selection detected.
+        </p>
         <div id="selection-actions" class="actions"></div>
       </section>
 
       <section>
-        <label class="section-head" for="text">Texte libre</label>
-        <textarea id="text" rows="3" placeholder="Colle un texte à traduire, reformuler ou résumer…"></textarea>
+        <label class="section-head" for="text" data-i18n="popup_free_text">Free text</label>
+        <textarea
+          id="text"
+          rows="3"
+          data-i18n-placeholder="popup_placeholder"
+          placeholder="Paste text to translate, rephrase or summarize…"
+        ></textarea>
         <div id="text-actions" class="actions"></div>
       </section>
 
       <section>
         <button type="button" id="page-action" class="wide">
-          Résumer cette page
-          <span class="kbd">Ctrl+Maj+E</span>
+          <span data-i18n="popup_summarize_page">Summarize this page</span>
+          <span class="kbd">Ctrl+Shift+E</span>
         </button>
       </section>
 
@@ -42,9 +51,10 @@
     </main>
 
     <footer class="foot">
-      <span>Ctrl+Maj+Y traduit la sélection</span>
+      <span data-i18n="popup_footer">Ctrl+Shift+Y translates the selection</span>
     </footer>
 
+    <script src="../shared/i18n.js"></script>
     <script src="../shared/constants.js"></script>
     <script src="popup.js"></script>
   </body>

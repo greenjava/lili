@@ -1,0 +1,955 @@
+{
+  "actionTitle": {
+    "message": "Lili — traduire, reformuler, résumer"
+  },
+  "action_fix": {
+    "message": "Corriger"
+  },
+  "action_fix_hint": {
+    "message": "Corriger l’orthographe et la grammaire"
+  },
+  "action_fix_short": {
+    "message": "Corriger"
+  },
+  "action_refine": {
+    "message": "Suites (raccourcir, détailler…)"
+  },
+  "action_refine_bullets": {
+    "message": "En puces"
+  },
+  "action_refine_bullets_hint": {
+    "message": "Convertir le résultat en liste à puces"
+  },
+  "action_refine_bullets_short": {
+    "message": "En puces"
+  },
+  "action_refine_explain": {
+    "message": "Expliquer"
+  },
+  "action_refine_explain_hint": {
+    "message": "Expliquer le résultat simplement"
+  },
+  "action_refine_explain_short": {
+    "message": "Expliquer"
+  },
+  "action_refine_formal": {
+    "message": "Plus formel"
+  },
+  "action_refine_formal_hint": {
+    "message": "Rendre le résultat plus formel"
+  },
+  "action_refine_formal_short": {
+    "message": "Plus formel"
+  },
+  "action_refine_hint": {
+    "message": "Modèle utilisé pour affiner un résultat"
+  },
+  "action_refine_longer": {
+    "message": "Détailler"
+  },
+  "action_refine_longer_hint": {
+    "message": "Développer le résultat"
+  },
+  "action_refine_longer_short": {
+    "message": "Détailler"
+  },
+  "action_refine_short": {
+    "message": "Suites"
+  },
+  "action_refine_shorter": {
+    "message": "Raccourcir"
+  },
+  "action_refine_shorter_hint": {
+    "message": "Raccourcir le résultat"
+  },
+  "action_refine_shorter_short": {
+    "message": "Raccourcir"
+  },
+  "action_rephrase": {
+    "message": "Reformuler"
+  },
+  "action_rephrase_hint": {
+    "message": "Reformuler sans changer le sens (Ctrl+Maj+U)"
+  },
+  "action_rephrase_short": {
+    "message": "Reformuler"
+  },
+  "action_rephrase_translate": {
+    "message": "Reformuler + traduire"
+  },
+  "action_rephrase_translate_hint": {
+    "message": "Reformuler puis traduire le résultat"
+  },
+  "action_rephrase_translate_short": {
+    "message": "Reform. + trad."
+  },
+  "action_summarize": {
+    "message": "Résumer"
+  },
+  "action_summarize_hint": {
+    "message": "Résumer la sélection (Ctrl+Maj+H)"
+  },
+  "action_summarize_page": {
+    "message": "Résumer la page"
+  },
+  "action_summarize_page_hint": {
+    "message": "Résumer le contenu de la page (Ctrl+Maj+E)"
+  },
+  "action_summarize_page_short": {
+    "message": "Page"
+  },
+  "action_summarize_short": {
+    "message": "Résumer"
+  },
+  "action_translate": {
+    "message": "Traduire"
+  },
+  "action_translate_hint": {
+    "message": "Traduire la sélection (Ctrl+Maj+Y)"
+  },
+  "action_translate_short": {
+    "message": "Traduire"
+  },
+  "commandRephrase": {
+    "message": "Reformuler la sélection"
+  },
+  "commandSummarizePage": {
+    "message": "Résumer la page"
+  },
+  "commandSummarizeSelection": {
+    "message": "Résumer la sélection"
+  },
+  "commandTranslate": {
+    "message": "Traduire la sélection"
+  },
+  "error_anthropic_response": {
+    "message": "Erreur renvoyée par Anthropic."
+  },
+  "error_base_url_missing": {
+    "message": "URL de base manquante dans les réglages."
+  },
+  "error_base_url_missing_short": {
+    "message": "URL de base manquante."
+  },
+  "error_connection_lost": {
+    "message": "Connexion interrompue avant la fin de la réponse. Réessaie ou vérifie les réglages."
+  },
+  "error_dedicated_too_long": {
+    "message": "Ce modèle de traduction dédié accepte environ $COUNT$ caractères. Sélectionne un passage plus court.",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_detail": {
+    "message": "Détail : $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_empty_model_response": {
+    "message": "Le modèle a renvoyé une réponse vide."
+  },
+  "error_empty_response": {
+    "message": "Réponse vide ou inattendue du fournisseur."
+  },
+  "error_extension_unreachable": {
+    "message": "Impossible de joindre l’extension : $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_http_access": {
+    "message": "Accès refusé ($STATUS$). Vérifie la clé API dans les réglages.",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_http_generic": {
+    "message": "Erreur du service ($STATUS$).",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_http_not_found": {
+    "message": "Endpoint ou modèle introuvable (404). Vérifie l’URL de base et le nom du modèle."
+  },
+  "error_http_rate_limit": {
+    "message": "Quota ou limite de débit atteint (429). Réessaie dans un instant."
+  },
+  "error_interrupted": {
+    "message": "Requête interrompue."
+  },
+  "error_list_models_unexpected": {
+    "message": "Réponse inattendue de la liste des modèles."
+  },
+  "error_missing_api_key": {
+    "message": "Clé API manquante pour $LABEL$. Ouvre les réglages de Lili.",
+    "placeholders": {
+      "LABEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_missing_base_url": {
+    "message": "URL de base manquante pour $LABEL$.",
+    "placeholders": {
+      "LABEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_missing_model_connection": {
+    "message": "Renseigne un modèle par défaut pour cette connexion."
+  },
+  "error_missing_model_task": {
+    "message": "Aucun modèle défini pour cette tâche ($LABEL$). Ouvre les réglages de Lili.",
+    "placeholders": {
+      "LABEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_network": {
+    "message": "Impossible de joindre l’API. Vérifie l’URL de base et l’autorisation d’accès à cet hôte dans les réglages."
+  },
+  "error_network_join": {
+    "message": "Impossible de joindre $LABEL$. Vérifie l’URL de base, ta connexion, et l’autorisation d’accès à cet hôte (bouton « Enregistrer » dans les réglages).",
+    "placeholders": {
+      "LABEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_no_connection": {
+    "message": "Aucune connexion configurée. Ouvre les réglages de Lili pour en ajouter une."
+  },
+  "error_no_connection_short": {
+    "message": "Aucune connexion configurée."
+  },
+  "error_no_text": {
+    "message": "Aucun texte à traiter."
+  },
+  "error_not_enough_page_text": {
+    "message": "Cette page ne contient pas assez de texte à résumer."
+  },
+  "error_page_too_short": {
+    "message": "Cette page ne semble pas contenir assez de texte à résumer (article, blog, documentation…)."
+  },
+  "error_provider_response": {
+    "message": "Erreur renvoyée par le fournisseur."
+  },
+  "error_selection_too_long": {
+    "message": "Sélection trop longue : $COUNT$ caractères (maximum $MAX$). Sélectionne un passage plus court, ou utilise « Résumer la page ».",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      },
+      "MAX": {
+        "content": "$2"
+      }
+    }
+  },
+  "error_send_failed": {
+    "message": "Envoi impossible : $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_test_timeout": {
+    "message": "Pas de réponse en 20 s. Vérifie l’URL et que le service tourne."
+  },
+  "error_timeout": {
+    "message": "Délai dépassé."
+  },
+  "error_timeout_long": {
+    "message": "Délai dépassé (90 s sans réponse). Essaie un texte plus court, un modèle plus rapide, ou vérifie la connexion."
+  },
+  "error_unknown": {
+    "message": "Erreur inconnue."
+  },
+  "error_unknown_action": {
+    "message": "Action inconnue : $ACTION$",
+    "placeholders": {
+      "ACTION": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_unknown_detail": {
+    "message": "erreur inconnue"
+  },
+  "error_unsupported_action": {
+    "message": "Action non prise en charge : $ACTION$",
+    "placeholders": {
+      "ACTION": {
+        "content": "$1"
+      }
+    }
+  },
+  "extensionDescription": {
+    "message": "Traduit, reformule, corrige et résume la sélection ou la page entière."
+  },
+  "extensionName": {
+    "message": "Lili — traduire, reformuler, résumer"
+  },
+  "language_en": {
+    "message": "Anglais"
+  },
+  "language_fr": {
+    "message": "Français"
+  },
+  "menu_fix": {
+    "message": "Corriger la sélection"
+  },
+  "menu_options": {
+    "message": "Réglages de Lili…"
+  },
+  "menu_rephrase": {
+    "message": "Reformuler la sélection"
+  },
+  "menu_rephrase_translate": {
+    "message": "Reformuler puis traduire"
+  },
+  "menu_summarize": {
+    "message": "Résumer la sélection"
+  },
+  "menu_summarize_page": {
+    "message": "Résumer cette page"
+  },
+  "menu_translate": {
+    "message": "Traduire la sélection"
+  },
+  "options_add_aria": {
+    "message": "Service à ajouter"
+  },
+  "options_add_connection": {
+    "message": "Ajouter la connexion"
+  },
+  "options_address": {
+    "message": "Adresse : $URL$",
+    "placeholders": {
+      "URL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_api_key": {
+    "message": "Clé API"
+  },
+  "options_api_type": {
+    "message": "Type d’API"
+  },
+  "options_background_unreachable": {
+    "message": "Aucune réponse du service d’arrière-plan : recharge l’extension puis réessaie."
+  },
+  "options_base_url": {
+    "message": "URL de base"
+  },
+  "options_connection": {
+    "message": "Connexion"
+  },
+  "options_connections_help": {
+    "message": "Ajoute un ou plusieurs services. Lili appelle directement leur API : rien ne transite par un serveur intermédiaire. Chaque tâche pourra ensuite utiliser une connexion et un modèle différents."
+  },
+  "options_connections_title": {
+    "message": "Connexions"
+  },
+  "options_copied": {
+    "message": "Adresse copiée : $URL$",
+    "placeholders": {
+      "URL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_copy_shortcuts": {
+    "message": "Copier l’adresse des raccourcis"
+  },
+  "options_custom_model": {
+    "message": "Autre modèle…"
+  },
+  "options_custom_suffix": {
+    "message": "$MODEL$ · personnalisé",
+    "placeholders": {
+      "MODEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_default_model": {
+    "message": "Modèle par défaut"
+  },
+  "options_default_model_label": {
+    "message": "Défaut : $MODEL$",
+    "placeholders": {
+      "MODEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_failed": {
+    "message": "Échec : $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_fallback": {
+    "message": "Par défaut"
+  },
+  "options_first_connection": {
+    "message": "Première connexion"
+  },
+  "options_hide": {
+    "message": "Masquer"
+  },
+  "options_interface_title": {
+    "message": "Interface"
+  },
+  "options_languages_title": {
+    "message": "Langues"
+  },
+  "options_length": {
+    "message": "Longueur du résumé"
+  },
+  "options_length_court": {
+    "message": "Court"
+  },
+  "options_length_detaille": {
+    "message": "Détaillé"
+  },
+  "options_length_moyen": {
+    "message": "Moyen"
+  },
+  "options_limit_page": {
+    "message": "Page maximale analysée (caractères)"
+  },
+  "options_limit_selection": {
+    "message": "Sélection maximale (caractères)"
+  },
+  "options_limits_hint": {
+    "message": "Au-delà de ces limites, le texte est tronqué (résumé de page) ou refusé (sélection)."
+  },
+  "options_limits_title": {
+    "message": "Limites"
+  },
+  "options_load_failed": {
+    "message": "Impossible de charger les réglages : $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_load_models": {
+    "message": "Charger les modèles"
+  },
+  "options_loading_models": {
+    "message": "Chargement des modèles…"
+  },
+  "options_model": {
+    "message": "Modèle"
+  },
+  "options_model_default": {
+    "message": "$MODEL$ (défaut)",
+    "placeholders": {
+      "MODEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_models_count": {
+    "message": "$COUNT$ modèles",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_models_loaded": {
+    "message": "$COUNT$ modèles chargés.",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_name": {
+    "message": "Nom"
+  },
+  "options_network_denied": {
+    "message": "Accès réseau refusé pour cet hôte."
+  },
+  "options_no_connection": {
+    "message": "Aucune connexion. Ajoute-en une avec le menu ci-dessous."
+  },
+  "options_no_model": {
+    "message": "— défaut —"
+  },
+  "options_none": {
+    "message": "— aucun —"
+  },
+  "options_output": {
+    "message": "Langue des résumés"
+  },
+  "options_output_en": {
+    "message": "En anglais"
+  },
+  "options_output_fr": {
+    "message": "En français"
+  },
+  "options_placeholder_model": {
+    "message": "modèle"
+  },
+  "options_preset_added": {
+    "message": "$PRESET$ ajouté. Renseigne la clé API puis enregistre.",
+    "placeholders": {
+      "PRESET": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_remove": {
+    "message": "Supprimer"
+  },
+  "options_remove_confirm": {
+    "message": "Supprimer la connexion « $NAME$ » ?",
+    "placeholders": {
+      "NAME": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_reset": {
+    "message": "Réinitialiser"
+  },
+  "options_reset_confirm": {
+    "message": "Rétablir tous les réglages par défaut (clés API comprises) ?"
+  },
+  "options_reset_done": {
+    "message": "Réglages réinitialisés."
+  },
+  "options_reset_failed": {
+    "message": "Réinitialisation impossible."
+  },
+  "options_resetting": {
+    "message": "Réinitialisation…"
+  },
+  "options_reveal": {
+    "message": "Afficher"
+  },
+  "options_routes_help": {
+    "message": "Choisis la connexion et le modèle de chaque tâche. Laisse la connexion sur « Par défaut » pour réutiliser la connexion par défaut ; laisse le modèle vide pour utiliser le modèle par défaut de la connexion."
+  },
+  "options_routes_hint": {
+    "message": "Les modèles de traduction dédiés (par exemple Olala-v1.0-translate) reçoivent automatiquement les langues source et cible, sans prompt système. Sur « Reformuler + traduire », un tel modèle traduit sans reformuler."
+  },
+  "options_routes_title": {
+    "message": "Modèles par tâche"
+  },
+  "options_save": {
+    "message": "Enregistrer"
+  },
+  "options_save_error": {
+    "message": "Erreur : $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_save_failed": {
+    "message": "enregistrement impossible"
+  },
+  "options_saved": {
+    "message": "Réglages enregistrés."
+  },
+  "options_saved_denied": {
+    "message": "Réglages enregistrés, mais l’accès réseau à un hôte est refusé$DETAIL$. L’API doit alors autoriser CORS.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_saving": {
+    "message": "Enregistrement…"
+  },
+  "options_shortcut_assigned": {
+    "message": "assigné · $KEYS$",
+    "placeholders": {
+      "KEYS": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_shortcut_page": {
+    "message": "Résumer la page"
+  },
+  "options_shortcut_rephrase": {
+    "message": "Reformuler la sélection"
+  },
+  "options_shortcut_summarize": {
+    "message": "Résumer la sélection"
+  },
+  "options_shortcut_translate": {
+    "message": "Traduire la sélection"
+  },
+  "options_shortcut_unassigned": {
+    "message": "non assigné"
+  },
+  "options_shortcuts_hint": {
+    "message": "Chrome peut conserver un ancien raccourci ou laisser le champ vide après une mise à jour. Cliquez sur le crayon dans chrome://extensions/shortcuts (Firefox : about:addons → « Gérer les raccourcis ») pour l’assigner. Les raccourcis fonctionnent aussi directement dans la page, même si Chrome les affiche comme non assignés."
+  },
+  "options_shortcuts_title": {
+    "message": "Raccourcis"
+  },
+  "options_sites_disabled": {
+    "message": "Désactiver la barre flottante"
+  },
+  "options_sites_disabled_hint": {
+    "message": "Un domaine par ligne. Les actions restent accessibles par le menu contextuel et le popup."
+  },
+  "options_sites_help": {
+    "message": "Règles appliquées au domaine de la page. Un domaine couvre aussi ses sous-domaines."
+  },
+  "options_sites_targets": {
+    "message": "Langue cible de traduction par domaine"
+  },
+  "options_sites_targets_hint": {
+    "message": "Format : domaine = fr ou domaine = en. Prioritaire sur le réglage global."
+  },
+  "options_sites_title": {
+    "message": "Sites"
+  },
+  "options_style_title": {
+    "message": "Style"
+  },
+  "options_tagline": {
+    "message": "Traduire, reformuler, résumer — sans quitter la page."
+  },
+  "options_target_auto": {
+    "message": "FR ↔ EN automatique"
+  },
+  "options_target_en": {
+    "message": "Toujours vers l’anglais"
+  },
+  "options_target_fr": {
+    "message": "Toujours vers le français"
+  },
+  "options_task": {
+    "message": "Tâche"
+  },
+  "options_test": {
+    "message": "Tester"
+  },
+  "options_test_failed": {
+    "message": "Échec du test."
+  },
+  "options_test_ok": {
+    "message": "Connexion OK en $MS$ ms — « $TEXT$ »",
+    "placeholders": {
+      "MS": {
+        "content": "$1"
+      },
+      "TEXT": {
+        "content": "$2"
+      }
+    }
+  },
+  "options_testing": {
+    "message": "Test en cours…"
+  },
+  "options_title": {
+    "message": "Réglages — Lili"
+  },
+  "options_tone": {
+    "message": "Ton de la reformulation"
+  },
+  "options_tone_academique": {
+    "message": "Académique"
+  },
+  "options_tone_decontracte": {
+    "message": "Décontracté"
+  },
+  "options_tone_neutre": {
+    "message": "Neutre"
+  },
+  "options_tone_professionnel": {
+    "message": "Professionnel"
+  },
+  "options_translation": {
+    "message": "Traduction"
+  },
+  "options_ui_actions": {
+    "message": "Actions de la barre flottante"
+  },
+  "options_ui_auto_replace": {
+    "message": "Remplacer automatiquement le texte des champs éditables (Ctrl+Z pour annuler)"
+  },
+  "options_ui_context": {
+    "message": "Envoyer le paragraphe autour de la sélection comme contexte"
+  },
+  "options_ui_diff_hint": {
+    "message": "Le diff avant/après s’affiche pour les champs éditables quand « Remplacer automatiquement » et « Mode direct » sont désactivés. Hors champ éditable, il n’y a rien à remplacer."
+  },
+  "options_ui_direct": {
+    "message": "Remplacer directement dans les champs, sans afficher le panneau"
+  },
+  "options_ui_markdown": {
+    "message": "Interpréter le Markdown des résultats (gras, listes, titres)"
+  },
+  "options_ui_toolbar": {
+    "message": "Afficher la barre flottante près de la sélection"
+  },
+  "panel_back": {
+    "message": "Retour"
+  },
+  "panel_cancel": {
+    "message": "Annuler"
+  },
+  "panel_close": {
+    "message": "Fermer (Échap)"
+  },
+  "panel_close_short": {
+    "message": "Fermer"
+  },
+  "panel_compare_hint": {
+    "message": "Vérifie les modifications avant de remplacer."
+  },
+  "panel_confirm": {
+    "message": "Confirmer"
+  },
+  "panel_copy": {
+    "message": "Copier"
+  },
+  "panel_dialog_label": {
+    "message": "Résultat Lili"
+  },
+  "panel_escape": {
+    "message": "Échap"
+  },
+  "panel_history": {
+    "message": "Historique"
+  },
+  "panel_history_add_favorite": {
+    "message": "Ajouter aux favoris"
+  },
+  "panel_history_all": {
+    "message": "Tous"
+  },
+  "panel_history_clear": {
+    "message": "Effacer"
+  },
+  "panel_history_clear_confirm": {
+    "message": "Effacer tout l’historique des résultats ?"
+  },
+  "panel_history_empty": {
+    "message": "Aucun résultat pour l’instant."
+  },
+  "panel_history_favorites": {
+    "message": "Favoris"
+  },
+  "panel_history_hours": {
+    "message": "il y a $COUNT$ h",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "panel_history_loading": {
+    "message": "Chargement…"
+  },
+  "panel_history_minutes": {
+    "message": "il y a $COUNT$ min",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "panel_history_no_favorites": {
+    "message": "Aucun favori."
+  },
+  "panel_history_now": {
+    "message": "à l’instant"
+  },
+  "panel_history_remove": {
+    "message": "Supprimer"
+  },
+  "panel_history_remove_favorite": {
+    "message": "Retirer des favoris"
+  },
+  "panel_no_changes": {
+    "message": "Aucune modification."
+  },
+  "panel_replace": {
+    "message": "Remplacer…"
+  },
+  "panel_replace_title": {
+    "message": "Comparer avant de remplacer"
+  },
+  "panel_resize": {
+    "message": "Redimensionner"
+  },
+  "panel_result": {
+    "message": "Résultat"
+  },
+  "panel_retry": {
+    "message": "Relancer"
+  },
+  "panel_sending": {
+    "message": "Envoi de la demande…"
+  },
+  "panel_settings": {
+    "message": "Réglages"
+  },
+  "panel_stop": {
+    "message": "Arrêter"
+  },
+  "panel_stopped": {
+    "message": "Génération arrêtée."
+  },
+  "panel_toolbar_label": {
+    "message": "Actions Lili"
+  },
+  "popup_chars": {
+    "message": "$COUNT$ car.",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_error_action": {
+    "message": "Impossible d’agir sur cette page : $DETAIL$. Recharge la page et réessaie.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_error_blocked": {
+    "message": "Cette page ne permet pas les actions Lili."
+  },
+  "popup_error_connection_refused": {
+    "message": "connexion refusée"
+  },
+  "popup_error_no_injection": {
+    "message": "Cette page n’autorise pas l’injection de l’extension (page interne, PDF, Web Store). Ouvre une page web classique."
+  },
+  "popup_error_no_tab": {
+    "message": "Aucun onglet actif détecté."
+  },
+  "popup_footer": {
+    "message": "Ctrl+Maj+Y traduit la sélection"
+  },
+  "popup_free_text": {
+    "message": "Texte libre"
+  },
+  "popup_no_connection": {
+    "message": "Aucune connexion"
+  },
+  "popup_no_selection": {
+    "message": "Aucune sélection détectée."
+  },
+  "popup_placeholder": {
+    "message": "Colle un texte à traduire, reformuler ou résumer…"
+  },
+  "popup_selection": {
+    "message": "Sélection"
+  },
+  "popup_settings": {
+    "message": "Réglages"
+  },
+  "popup_summarize_page": {
+    "message": "Résumer cette page"
+  },
+  "preset_anthropic": {
+    "message": "Anthropic"
+  },
+  "preset_custom": {
+    "message": "Personnalisé (OpenAI-compatible)"
+  },
+  "preset_go": {
+    "message": "OpenCode Go"
+  },
+  "preset_ollama": {
+    "message": "Ollama (local)"
+  },
+  "preset_openai": {
+    "message": "OpenAI"
+  },
+  "preset_openrouter": {
+    "message": "OpenRouter"
+  },
+  "preset_ovh": {
+    "message": "OVHcloud AI Endpoints"
+  },
+  "preset_zen": {
+    "message": "OpenCode Zen"
+  },
+  "status_reading_section": {
+    "message": "Lecture de la page… section $INDEX$/$TOTAL$",
+    "placeholders": {
+      "INDEX": {
+        "content": "$1"
+      },
+      "TOTAL": {
+        "content": "$2"
+      }
+    }
+  },
+  "status_synthesizing": {
+    "message": "Synthèse du résumé…"
+  },
+  "summary_section_one": {
+    "message": "1 section"
+  },
+  "summary_sections": {
+    "message": "$COUNT$ sections",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "toast_copied": {
+    "message": "Copié dans le presse-papiers."
+  },
+  "toast_copy_failed": {
+    "message": "Copie impossible."
+  },
+  "toast_processing": {
+    "message": "Traitement en cours…"
+  },
+  "toast_replace_failed": {
+    "message": "Remplacement impossible."
+  },
+  "toast_replace_failed_changed": {
+    "message": "Remplacement impossible : le champ a peut-être changé."
+  },
+  "toast_replaced": {
+    "message": "Texte remplacé. Ctrl+Z pour annuler."
+  },
+  "toast_select_or_paste": {
+    "message": "Sélectionne d’abord du texte, ou colle-le dans le popup."
+  },
+  "toast_select_text": {
+    "message": "Sélectionne d’abord du texte."
+  }
+}

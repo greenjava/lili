@@ -54,6 +54,8 @@ vers l’API choisie : aucun serveur intermédiaire n’est impliqué.
 - **Listes de modèles automatiques**, récupérées auprès de chaque fournisseur, mises en cache sept
   jours et rafraîchissables manuellement.
 - **Détection de langue FR/EN** pour la traduction automatique, ou langue cible fixe.
+- **Interface localisée** en anglais et en français selon la langue du navigateur (anglais par
+  défaut) ; le texte généré suit les réglages de langue.
 - Le panneau de résultat se **déplace** par son en-tête et se **redimensionne** par la poignée en bas
   à droite.
 
@@ -72,6 +74,10 @@ Historique local, accessible par l’icône horloge du panneau de résultat :
 Les résumés de page sont rendus avec un Markdown léger :
 
 ![Résumé de page](docs/resume.png)
+
+> Les captures montrent l’interface en français. L’interface suit la langue du navigateur (anglais
+> par défaut, français si le navigateur est en français) ; le texte généré suit les réglages de
+> langue.
 
 ## Installation
 
@@ -357,9 +363,9 @@ la release (une XPI signée par Mozilla est nécessaire pour une installation pe
 - Branches : `main` est stable (releases) ; `dev` sert au développement et à l’intégration.
 - Les commits suivent **Gitmoji**, avec un sujet à l’impératif en anglais et un corps factuel en
   puces.
-- Le code et les commentaires sont en anglais, avec des commentaires courts ; l’interface et les
-  prompts sont en français. La documentation est fournie en anglais (`README.md`) et en français
-  (`README.fr.md`).
+- Le code et les commentaires sont en anglais, avec des commentaires courts ; l’interface est
+  localisée en anglais et en français (anglais par défaut) et les prompts sont en français. La
+  documentation est fournie en anglais (`README.md`) et en français (`README.fr.md`).
 
 ## Licence
 

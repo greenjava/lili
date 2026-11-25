@@ -11,6 +11,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Localized interface: English and French catalogs (`_locales`), following the browser language with
+  English as the default. Menus, options, popup, floating bar and result panel are translated.
 - Formatting preservation: rich selections are captured as Markdown, rendered after translation, and
   inserted as formatted HTML into `contenteditable` fields.
 - The options page shows the shortcuts Chrome actually assigned and provides the address of the

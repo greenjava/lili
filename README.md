@@ -51,6 +51,8 @@ intermediate server.
 - **Per-task routing**: one connection and one model per action, with a fallback connection.
 - **Automatic model lists** fetched from each provider, cached for seven days, with a manual refresh.
 - **FR/EN language detection** for automatic translation, or a fixed target language.
+- **Localized interface** in English and French, following the browser language (English by
+  default); generated text follows the language settings.
 - Result panel can be **dragged** by its header and **resized** from the bottom-right grip.
 
 | Result panel | Per-task routing |
@@ -69,8 +71,8 @@ Page summaries are rendered with lightweight Markdown:
 
 ![Page summary](docs/resume.png)
 
-> Screenshots show the French interface. The extension UI is currently in French; generated text
-> follows the language settings.
+> Screenshots show the French interface. The interface follows the browser language (English by
+> default, French when the browser is in French); generated text follows the language settings.
 
 ## Installation
 
@@ -345,8 +347,9 @@ release (a Mozilla-signed XPI is required for a permanent Firefox install).
 
 - Branches: `main` is stable (releases); `dev` is used for development and integration.
 - Commits follow **Gitmoji**, with an imperative English subject and a factual bullet-point body.
-- Code and comments are in English, with short comments; the interface and prompts are in French.
-  Documentation is provided in English (`README.md`) and French (`README.fr.md`).
+- Code and comments are in English, with short comments; the interface is localized in English and
+  French (English is the default), and the prompts are in French. Documentation is provided in
+  English (`README.md`) and French (`README.fr.md`).
 
 ## License
 

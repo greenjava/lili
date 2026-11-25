@@ -208,9 +208,12 @@ async function main() {
     headless: true,
     ignoreDefaultArgs: ['--disable-extensions'],
     userDataDir: PROFILE,
+    // The assertions below expect the French UI; force the extension locale.
+    env: { ...process.env, LANGUAGE: 'fr', LANG: 'fr_FR.UTF-8' },
     args: [
       '--no-first-run',
       '--no-default-browser-check',
+      '--lang=fr-FR',
       '--disable-features=Translate',
       `--disable-extensions-except=${EXT}`,
       `--load-extension=${EXT}`,

@@ -9,6 +9,8 @@
   window.__liliReady = true;
 
   const LILI = globalThis.LILI || {};
+  const I18N = globalThis.LILI_I18N || { t: (key) => key, locale: 'en' };
+  const t = (key, substitutions) => I18N.t(key, substitutions);
   const ACTIONS = LILI.ACTIONS || {};
   const REPLACEABLE = new Set(LILI.REPLACEABLE || []);
   const FOLLOW_UPS = LILI.FOLLOW_UPS || [];
@@ -91,19 +93,19 @@
     const bar = node('div', {
       class: 'lili-bar',
       role: 'toolbar',
-      'aria-label': 'Actions Lili',
+      'aria-label': t('panel_toolbar_label'),
       hidden: '',
     });
 
-    const title = node('span', { class: 'lili-title', text: 'Résultat' });
+    const title = node('span', { class: 'lili-title', text: t('panel_result') });
     const meta = node('span', { class: 'lili-meta' });
 
     const historyBtn = node('button', {
       type: 'button',
       class: 'lili-iconbtn',
       'data-ui': 'history',
-      title: 'Historique',
-      'aria-label': 'Historique',
+      title: t('panel_history'),
+      'aria-label': t('panel_history'),
     });
     historyBtn.appendChild(iconNode('history'));
 
@@ -111,8 +113,8 @@
       type: 'button',
       class: 'lili-iconbtn',
       'data-ui': 'settings',
-      title: 'Réglages',
-      'aria-label': 'Réglages',
+      title: t('panel_settings'),
+      'aria-label': t('panel_settings'),
     });
     settingsBtn.appendChild(iconNode('settings'));
 
@@ -120,8 +122,8 @@
       type: 'button',
       class: 'lili-iconbtn',
       'data-ui': 'close',
-      title: 'Fermer (Échap)',
-      'aria-label': 'Fermer',
+      title: t('panel_close'),
+      'aria-label': t('panel_close_short'),
     });
     closeBtn.appendChild(iconNode('close'));
 
@@ -144,25 +146,25 @@
     const body = node('div', { class: 'lili-body' }, [text, historyView, error, status]);
     const followUps = node('div', { class: 'lili-followups', hidden: '' });
 
-    const replaceBtn = actionButton('replace', 'replace', 'Remplacer…', true);
-    replaceBtn.title = 'Comparer avant de remplacer';
-    replaceBtn.setAttribute('aria-label', 'Comparer avant de remplacer');
+    const replaceBtn = actionButton('replace', 'replace', t('panel_replace'), true);
+    replaceBtn.title = t('panel_replace_title');
+    replaceBtn.setAttribute('aria-label', t('panel_replace_title'));
     replaceBtn.hidden = true;
     replaceBtn.disabled = true;
 
-    const copyBtn = actionButton('copy', 'copy', 'Copier');
+    const copyBtn = actionButton('copy', 'copy', t('panel_copy'));
     copyBtn.disabled = true;
 
-    const retryBtn = actionButton('retry', 'retry', 'Relancer');
+    const retryBtn = actionButton('retry', 'retry', t('panel_retry'));
     retryBtn.disabled = true;
 
-    const stopBtn = actionButton('stop', 'stop', 'Arrêter');
+    const stopBtn = actionButton('stop', 'stop', t('panel_stop'));
     stopBtn.hidden = true;
 
-    const confirmBtn = actionButton('confirm', 'replace', 'Confirmer', true);
+    const confirmBtn = actionButton('confirm', 'replace', t('panel_confirm'), true);
     confirmBtn.hidden = true;
 
-    const cancelBtn = actionButton('cancel-compare', 'close', 'Annuler');
+    const cancelBtn = actionButton('cancel-compare', 'close', t('panel_cancel'));
     cancelBtn.hidden = true;
 
     const foot = node('div', { class: 'lili-foot' }, [
@@ -172,18 +174,18 @@
       stopBtn,
       confirmBtn,
       cancelBtn,
-      node('span', { class: 'lili-kbd', text: 'Échap' }),
+      node('span', { class: 'lili-kbd', text: t('panel_escape') }),
     ]);
 
     const resizeHandle = node('div', {
       class: 'lili-resize',
       'aria-hidden': 'true',
-      title: 'Redimensionner',
+      title: t('panel_resize'),
     });
 
     const panel = node(
       'div',
-      { class: 'lili-panel', role: 'dialog', 'aria-label': 'Résultat Lili', hidden: '' },
+      { class: 'lili-panel', role: 'dialog', 'aria-label': t('panel_dialog_label'), hidden: '' },
       [head, body, followUps, foot, resizeHandle]
     );
 
@@ -322,11 +324,13 @@
       type: 'button',
       class: 'lili-btn',
       'data-action': id,
-      title: action.hint || action.label,
-      'aria-label': action.label,
+      title: t(action.hintKey || action.labelKey),
+      'aria-label': t(action.labelKey),
     });
     button.appendChild(iconNode(action.icon));
-    button.appendChild(node('span', { class: 'lili-lbl', text: action.short || action.label }));
+    button.appendChild(
+      node('span', { class: 'lili-lbl', text: t(action.shortKey || action.labelKey) })
+    );
     return button;
   }
 
@@ -775,7 +779,7 @@
 
   function resetPanel(action, anchor, keepPosition) {
     panelView = 'result';
-    ui.title.textContent = (ACTIONS[action] && ACTIONS[action].label) || action;
+    ui.title.textContent = (ACTIONS[action] && t(ACTIONS[action].labelKey)) || action;
     ui.meta.textContent = '';
     ui.meta.title = '';
     delete ui.meta.dataset.direction;
@@ -806,7 +810,7 @@
     job = { action, text: '', stick: true };
     ui.panel.hidden = false;
     applyPanelSize();
-    setStatus('Envoi de la demande…');
+    setStatus(t('panel_sending'));
     if (!keepPosition) placePanel(anchor);
   }
 
@@ -1027,7 +1031,7 @@
     }
 
     if (job.previous) {
-      const back = actionButton('back', 'retry', 'Retour');
+      const back = actionButton('back', 'retry', t('panel_back'));
       back.classList.add('lili-followup');
       ui.followUps.appendChild(back);
       ui.followUps.appendChild(node('span', { class: 'lili-sep' }));
@@ -1040,9 +1044,9 @@
         type: 'button',
         class: 'lili-action lili-followup',
         'data-followup': id,
-        title: meta.hint || meta.label,
+        title: t(meta.hintKey || meta.labelKey),
       });
-      button.textContent = meta.short || meta.label;
+      button.textContent = t(meta.shortKey || meta.labelKey);
       ui.followUps.appendChild(button);
     }
 
@@ -1084,7 +1088,7 @@
       if (canReplace && job.text.trim()) {
         const ok = replaceSelection(lastRequest.selection, job.text.trim());
         closePanel();
-        toast(ok ? 'Texte remplacé. Ctrl+Z pour annuler.' : 'Remplacement impossible.');
+        toast(ok ? t('toast_replaced') : t('toast_replace_failed'));
       } else {
         ui.panel.hidden = false;
         job.direct = false;
@@ -1106,7 +1110,7 @@
       const ok = replaceSelection(lastRequest.selection, job.text.trim());
       if (ok) {
         closePanel();
-        toast('Texte remplacé. Ctrl+Z pour annuler.');
+        toast(t('toast_replaced'));
         return;
       }
     }
@@ -1181,7 +1185,7 @@
     ui.panel.classList.remove('is-streaming');
     ui.stopBtn.hidden = true;
     ui.historyBtn.disabled = false;
-    setStatus('Génération arrêtée.');
+    setStatus(t('panel_stopped'));
 
     const canReplace = !!(lastRequest && isReplaceable(lastRequest.selection));
     updateActionButtons(canReplace);
@@ -1220,10 +1224,10 @@
   function timeLabel(at) {
     const diff = Date.now() - Number(at || 0);
     if (!Number.isFinite(diff) || diff < 0) return '';
-    if (diff < 60000) return 'à l’instant';
-    if (diff < 3600000) return 'il y a ' + Math.round(diff / 60000) + ' min';
-    if (diff < 86400000) return 'il y a ' + Math.round(diff / 3600000) + ' h';
-    return new Date(at).toLocaleDateString('fr-FR');
+    if (diff < 60000) return t('panel_history_now');
+    if (diff < 3600000) return t('panel_history_minutes', [String(Math.round(diff / 60000))]);
+    if (diff < 86400000) return t('panel_history_hours', [String(Math.round(diff / 3600000))]);
+    return new Date(at).toLocaleDateString(I18N.locale);
   }
 
   async function openHistory() {
@@ -1232,7 +1236,7 @@
 
     panelView = 'history';
     historyFilter = 'all';
-    ui.title.textContent = 'Historique';
+    ui.title.textContent = t('panel_history');
     ui.meta.textContent = '';
     ui.meta.title = '';
     delete ui.meta.dataset.direction;
@@ -1244,7 +1248,7 @@
     ui.history.hidden = false;
     ui.body.scrollTop = 0;
     ui.history.textContent = '';
-    ui.history.appendChild(node('div', { class: 'lili-history-empty', text: 'Chargement…' }));
+    ui.history.appendChild(node('div', { class: 'lili-history-empty', text: t('panel_history_loading') }));
 
     try {
       const response = await api.runtime.sendMessage({ type: 'lili:history-list' });
@@ -1261,7 +1265,7 @@
     ui.history.textContent = '';
 
     const head = node('div', { class: 'lili-history-head' });
-    for (const [id, label] of [['all', 'Tous'], ['favorites', 'Favoris']]) {
+    for (const [id, label] of [[['all', t('panel_history_all')], ['favorites', t('panel_history_favorites')]]]) {
       head.appendChild(
         node('button', {
           type: 'button',
@@ -1276,7 +1280,7 @@
       type: 'button',
       class: 'lili-action',
       'data-history-clear': '1',
-      text: 'Effacer',
+      text: t('panel_history_clear'),
     });
     clear.style.marginLeft = 'auto';
     head.appendChild(clear);
@@ -1289,7 +1293,7 @@
       ui.history.appendChild(
         node('div', {
           class: 'lili-history-empty',
-          text: historyFilter === 'favorites' ? 'Aucun favori.' : 'Aucun résultat pour l’instant.',
+          text: historyFilter === 'favorites' ? t('panel_history_no_favorites') : t('panel_history_empty'),
         })
       );
       return;
@@ -1306,7 +1310,7 @@
       open.appendChild(
         node('span', {
           class: 'lili-history-action',
-          text: (ACTIONS[entry.action] && ACTIONS[entry.action].label) || entry.action || 'Résultat',
+          text: (ACTIONS[entry.action] && t(ACTIONS[entry.action].labelKey)) || entry.action || t('panel_result'),
         })
       );
       open.appendChild(node('span', { class: 'lili-history-time', text: timeLabel(entry.at) }));
@@ -1322,7 +1326,7 @@
         type: 'button',
         class: 'lili-iconbtn',
         'data-history-fav': entry.id,
-        title: entry.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+        title: entry.favorite ? t('panel_history_remove_favorite') : t('panel_history_add_favorite'),
       });
       star.textContent = entry.favorite ? '★' : '☆';
       item.appendChild(star);
@@ -1331,7 +1335,7 @@
         type: 'button',
         class: 'lili-iconbtn',
         'data-history-remove': entry.id,
-        title: 'Supprimer',
+        title: t('panel_history_remove'),
       });
       remove.textContent = '×';
       item.appendChild(remove);
@@ -1367,7 +1371,7 @@
   }
 
   async function clearHistoryEntries() {
-    if (!confirm('Effacer tout l’historique des résultats ?')) return;
+    if (!confirm(t('panel_history_clear_confirm'))) return;
     try {
       const response = await api.runtime.sendMessage({ type: 'lili:history-clear' });
       if (response && response.history) historyEntries = response.history;
@@ -1387,9 +1391,9 @@
     ui.foot.hidden = false;
     ui.error.hidden = true;
     ui.followUps.hidden = true;
-    ui.title.textContent = (ACTIONS[entry.action] && ACTIONS[entry.action].label) || 'Résultat';
+    ui.title.textContent = (ACTIONS[entry.action] && t(ACTIONS[entry.action].labelKey)) || t('panel_result');
     ui.meta.textContent = timeLabel(entry.at);
-    ui.meta.title = new Date(entry.at).toLocaleString('fr-FR');
+    ui.meta.title = new Date(entry.at).toLocaleString(I18N.locale);
     delete ui.meta.dataset.direction;
 
     job = {
@@ -1460,12 +1464,12 @@
     if (direct) {
       job.direct = true;
       ui.panel.hidden = true;
-      toast('Traitement en cours…');
+      toast(t('toast_processing'));
     }
 
     if (request.action === 'summarize_page' && (!request.page || request.page.text.length < 150)) {
       failJob(
-        'Cette page ne semble pas contenir assez de texte à résumer (article, blog, documentation…).'
+        t('error_page_too_short')
       );
       return;
     }
@@ -1474,7 +1478,11 @@
     try {
       port = api.runtime.connect({ name: 'lili-stream' });
     } catch (error) {
-      failJob('Impossible de joindre l’extension : ' + (error && error.message ? error.message : ''));
+      failJob(
+        t('error_extension_unreachable', [
+          (error && error.message) || t('error_unknown_detail'),
+        ])
+      );
       return;
     }
 
@@ -1507,8 +1515,7 @@
       job.port = null;
       if (!job.finished) {
         failJob(
-          (err && err.message) ||
-            'Connexion interrompue avant la fin de la réponse. Réessaie ou vérifie les réglages.'
+          (err && err.message) || t('error_connection_lost')
         );
       }
     });
@@ -1523,7 +1530,9 @@
         contextText: request.contextText || '',
       });
     } catch (error) {
-      failJob('Envoi impossible : ' + (error && error.message ? error.message : ''));
+      failJob(
+        t('error_send_failed', [(error && error.message) || t('error_unknown_detail')])
+      );
     }
   }
 
@@ -1582,7 +1591,7 @@
       const action = actionBtn.getAttribute('data-action');
       const request = buildRequest(action, {});
       if (!request) {
-        toast('Sélectionne d’abord du texte.');
+        toast(t('toast_select_text'));
         return;
       }
       runRequest(request);
@@ -1614,7 +1623,7 @@
   async function doCopy() {
     if (!job || !job.text.trim()) return;
     const ok = await copyText(markdownToPlain(job.text));
-    toast(ok ? 'Copié dans le presse-papiers.' : 'Copie impossible.');
+    toast(ok ? t('toast_copied') : t('toast_copy_failed'));
   }
 
   function renderDiff(before, after) {
@@ -1636,7 +1645,7 @@
     ui.text.classList.remove('is-markdown');
 
     if (!removed && !added) {
-      ui.text.appendChild(document.createTextNode('Aucune modification.'));
+      ui.text.appendChild(document.createTextNode(t('panel_no_changes')));
       return;
     }
 
@@ -1673,7 +1682,7 @@
     ui.cancelBtn.hidden = false;
     ui.body.scrollTop = 0;
     renderDiff(lastRequest.selection.text, markdownToPlain(job.text.trim()));
-    setStatus('Vérifiez les modifications avant de remplacer.');
+    setStatus(t('panel_compare_hint'));
   }
 
   function confirmReplace() {
@@ -1681,9 +1690,9 @@
     const ok = replaceSelection(lastRequest.selection, job.text.trim());
     if (ok) {
       closePanel();
-      toast('Texte remplacé. Ctrl+Z pour annuler.');
+      toast(t('toast_replaced'));
     } else {
-      toast('Remplacement impossible : le champ a peut-être changé.');
+      toast(t('toast_replace_failed_changed'));
     }
   }
 
@@ -1738,7 +1747,7 @@
     job.finished = true;
     job.comparing = false;
 
-    ui.title.textContent = (ACTIONS[job.action] && ACTIONS[job.action].label) || job.action;
+    ui.title.textContent = (ACTIONS[job.action] && t(ACTIONS[job.action].labelKey)) || job.action;
     ui.meta.textContent = previous.meta || '';
     ui.meta.title = '';
     if (previous.direction) ui.meta.dataset.direction = previous.direction;
@@ -2087,7 +2096,7 @@
 
     const request = buildRequest(action, {});
     if (request) runRequest(request);
-    else if (action !== 'summarize_page') toast('Sélectionne d’abord du texte.');
+    else if (action !== 'summarize_page') toast(t('toast_select_text'));
   }
 
   function scheduleShortcut(action) {
@@ -2216,7 +2225,7 @@
     if (message.type === 'lili:run') {
       const action = message.action;
       if (!ACTIONS[action]) {
-        sendResponse({ ok: false, error: 'Action inconnue : ' + action });
+        sendResponse({ ok: false, error: t('error_unknown_action', [action]) });
         return;
       }
 
@@ -2243,7 +2252,7 @@
         const request = buildRequest(action, {});
         if (request) runRequest(request);
         else if (action !== 'summarize_page') {
-          toast('Sélectionne d’abord du texte, ou colle-le dans le popup.');
+          toast(t('toast_select_or_paste'));
         }
       }
 

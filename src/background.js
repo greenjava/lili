@@ -5,6 +5,21 @@
 
 const api = globalThis.browser || globalThis.chrome;
 
+function t(key, substitutions) {
+  const values = Array.isArray(substitutions)
+    ? substitutions
+    : substitutions == null
+      ? []
+      : [String(substitutions)];
+  try {
+    return api.i18n.getMessage(key, values) || key;
+  } catch {
+    return key;
+  }
+}
+
+const UI_LOCALE = (api.i18n && api.i18n.getUILanguage && api.i18n.getUILanguage()) || 'en';
+
 const PORT_NAME = 'lili-stream';
 const TIMEOUT_MS = 90000;
 const TEST_TIMEOUT_MS = 20000;
@@ -98,7 +113,7 @@ function deepMerge(base, patch) {
 
 function endpoint(baseUrl, path) {
   const base = String(baseUrl || '').trim().replace(/\/+$/, '');
-  if (!base) throw new Error('URL de base manquante dans les réglages.');
+  if (!base) throw new Error(t('error_base_url_missing'));
   if (path.startsWith('/v1/') && /\/v1$/.test(base)) return base + path.slice(3);
   return base + path;
 }
@@ -123,7 +138,7 @@ function chunkText(text, size) {
 }
 
 function abortError() {
-  const error = new Error('Requête interrompue.');
+  const error = new Error(t('error_interrupted'));
   error.name = 'AbortError';
   return error;
 }
@@ -248,7 +263,7 @@ function findConnection(settings, id) {
 function resolveRoute(action, settings) {
   const connections = settings.connections || [];
   if (!connections.length) {
-    throw new Error('Aucune connexion configurée. Ouvre les réglages de Lili pour en ajouter une.');
+    throw new Error(t('error_no_connection'));
   }
 
   const route = (settings.routing && settings.routing[action]) || {};
@@ -263,9 +278,7 @@ function resolveRoute(action, settings) {
     : route.model || fallback.model || connection.model;
 
   if (!model) {
-    throw new Error(
-      'Aucun modèle défini pour cette tâche (' + connectionLabel(connection) + '). Ouvre les réglages de Lili.'
-    );
+    throw new Error(t('error_missing_model_task', [connectionLabel(connection)]));
   }
   return { connection, model };
 }
@@ -282,17 +295,15 @@ function isLocalHost(url) {
 }
 
 function validateConnection(connection) {
-  if (!connection) throw new Error('Aucune connexion configurée.');
+  if (!connection) throw new Error(t('error_no_connection_short'));
   if (!String(connection.baseUrl || '').trim()) {
-    throw new Error('URL de base manquante pour ' + connectionLabel(connection) + '.');
+    throw new Error(t('error_missing_base_url', [connectionLabel(connection)]));
   }
 
   // Local servers (vLLM, LiteLLM, Ollama) often run without an API key.
   if (connection.type !== 'ollama' && !isLocalHost(connection.baseUrl)) {
     if (!String(connection.apiKey || '').trim()) {
-      throw new Error(
-        'Clé API manquante pour ' + connectionLabel(connection) + '. Ouvre les réglages de Lili.'
-      );
+      throw new Error(t('error_missing_api_key', [connectionLabel(connection)]));
     }
   }
 }
@@ -353,10 +364,6 @@ function detectLanguage(input) {
   if (fr > en * 1.3) return 'fr';
   if (en > fr * 1.3) return 'en';
   return 'unknown';
-}
-
-function titleCaseFirst(text) {
-  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 
 function hostMatches(host, rule) {
@@ -459,7 +466,7 @@ function buildMessages(action, payload) {
         'Explique le texte avec des mots simples, comme à un lecteur non spécialiste, sans ajouter d’informations fausses.',
     };
 
-    if (!instructions[action]) throw new Error('Action non prise en charge : ' + action);
+    if (!instructions[action]) throw new Error(t('error_unsupported_action', [action]));
 
     const system = [
       'Tu améliores un texte fourni par l’utilisateur.',
@@ -584,7 +591,7 @@ function buildMessages(action, payload) {
     };
   }
 
-  throw new Error('Action non prise en charge : ' + action);
+  throw new Error(t('error_unsupported_action', [action]));
 }
 
 function withContext(text, context) {
@@ -785,11 +792,7 @@ async function requestOrThrow(url, init, label) {
     response = await fetch(url, init);
   } catch (error) {
     if (error && error.name === 'AbortError') throw error;
-    throw new Error(
-      'Impossible de joindre ' +
-        label +
-        '. Vérifie l’URL de base, ta connexion, et l’autorisation d’accès à cet hôte (bouton « Enregistrer » dans les réglages).'
-    );
+    throw new Error(t('error_network_join', [label]));
   }
 
   if (!response.ok) {
@@ -800,7 +803,7 @@ async function requestOrThrow(url, init, label) {
       /* ignore */
     }
     const detail = extractErrorMessage(body);
-    const suffix = detail ? '\n\nDétail : ' + detail : '';
+    const suffix = detail ? '\n\n' + t('error_detail', [detail]) : '';
 
     const fail = (text) => {
       const error = new Error(text);
@@ -809,17 +812,15 @@ async function requestOrThrow(url, init, label) {
     };
 
     if (response.status === 401 || response.status === 403) {
-      throw fail('Accès refusé (' + response.status + '). Vérifie la clé API dans les réglages.' + suffix);
+      throw fail(t('error_http_access', [String(response.status)]) + suffix);
     }
     if (response.status === 404) {
-      throw fail(
-        'Endpoint ou modèle introuvable (404). Vérifie l’URL de base et le nom du modèle.' + suffix
-      );
+      throw fail(t('error_http_not_found') + suffix);
     }
     if (response.status === 429) {
-      throw fail('Quota ou limite de débit atteint (429). Réessaie dans un instant.' + suffix);
+      throw fail(t('error_http_rate_limit') + suffix);
     }
-    throw fail('Erreur du service (' + response.status + ').' + suffix);
+    throw fail(t('error_http_generic', [String(response.status)]) + suffix);
   }
 
   return response;
@@ -915,7 +916,7 @@ async function listModels(connection, refresh) {
   }
 
   const url = modelsUrl(connection);
-  if (!url) throw new Error('URL de base manquante.');
+  if (!url) throw new Error(t('error_base_url_missing_short'));
 
   let models;
   try {
@@ -943,7 +944,7 @@ async function listModels(connection, refresh) {
     }
 
     const data = await response.json().catch(() => null);
-    if (!data) throw new Error('Réponse inattendue de la liste des modèles.');
+    if (!data) throw new Error(t('error_list_models_unexpected'));
 
     const list =
       connection.type === 'ollama'
@@ -1022,7 +1023,7 @@ async function callOpenAI({
     const data = await response.json().catch(() => ({}));
     const message = data && data.choices && data.choices[0] && data.choices[0].message;
     const text = message && typeof message.content === 'string' ? message.content : '';
-    if (!text.trim()) throw new Error('Réponse vide ou inattendue du fournisseur.');
+    if (!text.trim()) throw new Error(t('error_empty_response'));
     if (onDelta) onDelta(text);
     return text;
   }
@@ -1036,7 +1037,7 @@ async function callOpenAI({
     } catch {
       return;
     }
-    if (json.error) throw new Error(json.error.message || 'Erreur renvoyée par le fournisseur.');
+    if (json.error) throw new Error(json.error.message || t('error_provider_response'));
     const choice = json.choices && json.choices[0];
     const delta = choice && (choice.delta || choice.message);
     const text = delta && typeof delta.content === 'string' ? delta.content : '';
@@ -1047,7 +1048,7 @@ async function callOpenAI({
     }
   });
 
-  if (!result.trim()) throw new Error('Le modèle a renvoyé une réponse vide.');
+  if (!result.trim()) throw new Error(t('error_empty_model_response'));
   return result;
 }
 
@@ -1097,7 +1098,7 @@ async function callAnthropic({
       .filter((block) => block.type === 'text')
       .map((block) => block.text)
       .join('');
-    if (!text.trim()) throw new Error('Réponse vide ou inattendue d’Anthropic.');
+    if (!text.trim()) throw new Error(t('error_empty_response'));
     if (onDelta) onDelta(text);
     return text;
   }
@@ -1111,7 +1112,7 @@ async function callAnthropic({
       return;
     }
     if (json.type === 'error') {
-      throw new Error((json.error && json.error.message) || 'Erreur renvoyée par Anthropic.');
+      throw new Error((json.error && json.error.message) || t('error_anthropic_response'));
     }
     if (json.type === 'content_block_delta' && json.delta && json.delta.type === 'text_delta') {
       const text = json.delta.text || '';
@@ -1123,7 +1124,7 @@ async function callAnthropic({
     }
   });
 
-  if (!result.trim()) throw new Error('Le modèle a renvoyé une réponse vide.');
+  if (!result.trim()) throw new Error(t('error_empty_model_response'));
   return result;
 }
 
@@ -1167,7 +1168,7 @@ async function callOllama({
   if (!stream) {
     const data = await response.json().catch(() => ({}));
     const text = data && data.message && typeof data.message.content === 'string' ? data.message.content : '';
-    if (!text.trim()) throw new Error('Réponse vide ou inattendue d’Ollama (modèle chargé ?).');
+    if (!text.trim()) throw new Error(t('error_empty_response'));
     if (onDelta) onDelta(text);
     return text;
   }
@@ -1189,7 +1190,7 @@ async function callOllama({
     }
   });
 
-  if (!result.trim()) throw new Error('Le modèle a renvoyé une réponse vide.');
+  if (!result.trim()) throw new Error(t('error_empty_model_response'));
   return result;
 }
 
@@ -1198,7 +1199,7 @@ async function callOllama({
 async function summarizePageJob({ page, settings, route, post, signal, touch }) {
   const content = String((page && page.text) || '').trim();
   if (content.length < 150) {
-    throw new Error('Cette page ne contient pas assez de texte à résumer.');
+    throw new Error(t('error_not_enough_page_text'));
   }
 
   const lang = settings.language.output === 'en' ? 'en' : 'fr';
@@ -1219,7 +1220,12 @@ async function summarizePageJob({ page, settings, route, post, signal, touch }) 
 
   post({
     type: 'meta',
-    text: titleCaseFirst(LANG_NAMES[lang]) + ' · ' + used.length + ' section' + (used.length > 1 ? 's' : ''),
+    text:
+      t('language_' + lang) +
+      ' · ' +
+      (used.length === 1
+        ? t('summary_section_one')
+        : t('summary_sections', [String(used.length)])),
   });
 
   const done = () =>
@@ -1235,7 +1241,7 @@ async function summarizePageJob({ page, settings, route, post, signal, touch }) 
   const notes = [];
   for (let index = 0; index < used.length; index++) {
     if (signal.aborted) throw abortError();
-    post({ type: 'status', text: 'Lecture de la page… section ' + (index + 1) + '/' + used.length });
+    post({ type: 'status', text: t('status_reading_section', [String(index + 1), String(used.length)]) });
     touch();
 
     const prepared = pageChunkMessages(page, used[index], index + 1, used.length);
@@ -1251,7 +1257,7 @@ async function summarizePageJob({ page, settings, route, post, signal, touch }) 
   }
 
   if (signal.aborted) throw abortError();
-  post({ type: 'status', text: 'Synthèse du résumé…' });
+  post({ type: 'status', text: t('status_synthesizing') });
   touch();
 
   const prepared = pageReduceMessages(
@@ -1269,11 +1275,11 @@ async function summarizePageJob({ page, settings, route, post, signal, touch }) 
 
 function explainError(error, timedOut) {
   if (timedOut) {
-    return 'Délai dépassé (90 s sans réponse). Essaie un texte plus court, un modèle plus rapide, ou vérifie la connexion.';
+    return t('error_timeout_long');
   }
-  const message = (error && error.message) || String(error || 'Erreur inconnue.');
+  const message = (error && error.message) || String(error || t('error_unknown'));
   if (/Failed to fetch|NetworkError|Load failed|Network request failed/i.test(message)) {
-    return 'Impossible de joindre l’API. Vérifie l’URL de base et l’autorisation d’accès à cet hôte dans les réglages.';
+    return t('error_network');
   }
   return message;
 }
@@ -1294,7 +1300,7 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
     'refine_bullets',
     'refine_explain',
   ];
-  if (!known.includes(action)) throw new Error('Action inconnue : ' + action);
+  if (!known.includes(action)) throw new Error(t('error_unknown_action', [action]));
 
   const route = resolveRoute(ROUTE_ACTIONS[action] || action, settings);
   validateConnection(route.connection);
@@ -1305,17 +1311,11 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
   }
 
   const text = String(message.text || '').trim();
-  if (!text) throw new Error('Aucun texte à traiter.');
+  if (!text) throw new Error(t('error_no_text'));
 
   const maxChars = settings.limits.maxSelectionChars;
   if (text.length > maxChars) {
-    throw new Error(
-      'Sélection trop longue : ' +
-        text.length +
-        ' caractères (maximum ' +
-        maxChars +
-        '). Sélectionne un passage plus court, ou utilise « Résumer la page ».'
-    );
+    throw new Error(t('error_selection_too_long', [String(text.length), String(maxChars)]));
   }
 
   const siteTarget = siteTargetFor(settings, message.context && message.context.url);
@@ -1324,7 +1324,7 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
   if (action === 'translate' || action === 'rephrase_translate') {
     if (languages.label) post({ type: 'meta', text: languages.label });
   } else if (action === 'summarize') {
-    post({ type: 'meta', text: titleCaseFirst(languages.outputName) });
+    post({ type: 'meta', text: t('language_' + languages.output) });
   }
 
   const contextText = String(message.contextText || '').slice(0, CONTEXT_MAX_CHARS).trim();
@@ -1338,9 +1338,9 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
   if (isTranslationTask(action) && isDedicatedTranslationModel(route.model)) {
     if (text.length > DEDICATED_TRANSLATION_MAX_CHARS) {
       throw new Error(
-        'Ce modèle de traduction dédié accepte environ ' +
-          DEDICATED_TRANSLATION_MAX_CHARS.toLocaleString('fr-FR') +
-          ' caractères. Sélectionne un passage plus court.'
+        t('error_dedicated_too_long', [
+          DEDICATED_TRANSLATION_MAX_CHARS.toLocaleString(UI_LOCALE),
+        ])
       );
     }
     messages = [userMessage(text)];
@@ -1364,7 +1364,7 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
     onDelta: (delta) => post({ type: 'delta', text: delta }),
   });
 
-  if (isTimedOut()) throw new Error('Délai dépassé.');
+  if (isTimedOut()) throw new Error(t('error_timeout'));
 
   post({
     type: 'done',
@@ -1376,7 +1376,7 @@ async function runJob({ port, message, post, signal, touch, isTimedOut }) {
 
 async function testConnection(connection) {
   validateConnection(connection);
-  if (!connection.model) throw new Error('Renseigne un modèle par défaut pour cette connexion.');
+  if (!connection.model) throw new Error(t('error_missing_model_connection'));
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
@@ -1399,7 +1399,7 @@ async function testConnection(connection) {
     return { ok: true, ms: Date.now() - started, text: String(reply).trim().slice(0, 120) };
   } catch (error) {
     if (controller.signal.aborted) {
-      throw new Error('Pas de réponse en 20 s. Vérifie l’URL et que le service tourne.');
+      throw new Error(t('error_test_timeout'));
     }
     throw error;
   } finally {
@@ -1410,13 +1410,13 @@ async function testConnection(connection) {
 // ------------------------------------------------------------------ menus
 
 const MENUS = [
-  { id: 'lili-translate', title: 'Traduire la sélection', contexts: ['selection'] },
-  { id: 'lili-rephrase', title: 'Reformuler la sélection', contexts: ['selection'] },
-  { id: 'lili-rephrase-translate', title: 'Reformuler puis traduire', contexts: ['selection'] },
-  { id: 'lili-summarize', title: 'Résumer la sélection', contexts: ['selection'] },
-  { id: 'lili-fix', title: 'Corriger la sélection', contexts: ['selection'] },
-  { id: 'lili-summarize-page', title: 'Résumer cette page', contexts: ['page', 'frame'] },
-  { id: 'lili-options', title: 'Réglages de Lili…', contexts: ['action'] },
+  { id: 'lili-translate', title: t('menu_translate'), contexts: ['selection'] },
+  { id: 'lili-rephrase', title: t('menu_rephrase'), contexts: ['selection'] },
+  { id: 'lili-rephrase-translate', title: t('menu_rephrase_translate'), contexts: ['selection'] },
+  { id: 'lili-summarize', title: t('menu_summarize'), contexts: ['selection'] },
+  { id: 'lili-fix', title: t('menu_fix'), contexts: ['selection'] },
+  { id: 'lili-summarize-page', title: t('menu_summarize_page'), contexts: ['page', 'frame'] },
+  { id: 'lili-options', title: t('menu_options'), contexts: ['action'] },
 ];
 
 function createMenus() {

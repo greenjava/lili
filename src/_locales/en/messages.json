@@ -1,0 +1,955 @@
+{
+  "actionTitle": {
+    "message": "Lili — translate, rephrase, summarize"
+  },
+  "action_fix": {
+    "message": "Fix"
+  },
+  "action_fix_hint": {
+    "message": "Fix spelling and grammar"
+  },
+  "action_fix_short": {
+    "message": "Fix"
+  },
+  "action_refine": {
+    "message": "Follow-ups (shorten, expand…)"
+  },
+  "action_refine_bullets": {
+    "message": "Bullet list"
+  },
+  "action_refine_bullets_hint": {
+    "message": "Turn the result into a bullet list"
+  },
+  "action_refine_bullets_short": {
+    "message": "Bullets"
+  },
+  "action_refine_explain": {
+    "message": "Explain"
+  },
+  "action_refine_explain_hint": {
+    "message": "Explain the result simply"
+  },
+  "action_refine_explain_short": {
+    "message": "Explain"
+  },
+  "action_refine_formal": {
+    "message": "More formal"
+  },
+  "action_refine_formal_hint": {
+    "message": "Make the result more formal"
+  },
+  "action_refine_formal_short": {
+    "message": "More formal"
+  },
+  "action_refine_hint": {
+    "message": "Model used to refine a result"
+  },
+  "action_refine_longer": {
+    "message": "Expand"
+  },
+  "action_refine_longer_hint": {
+    "message": "Expand the result"
+  },
+  "action_refine_longer_short": {
+    "message": "Expand"
+  },
+  "action_refine_short": {
+    "message": "Follow-ups"
+  },
+  "action_refine_shorter": {
+    "message": "Shorten"
+  },
+  "action_refine_shorter_hint": {
+    "message": "Shorten the result"
+  },
+  "action_refine_shorter_short": {
+    "message": "Shorten"
+  },
+  "action_rephrase": {
+    "message": "Rephrase"
+  },
+  "action_rephrase_hint": {
+    "message": "Rephrase without changing the meaning (Ctrl+Shift+U)"
+  },
+  "action_rephrase_short": {
+    "message": "Rephrase"
+  },
+  "action_rephrase_translate": {
+    "message": "Rephrase + translate"
+  },
+  "action_rephrase_translate_hint": {
+    "message": "Rephrase, then translate the result"
+  },
+  "action_rephrase_translate_short": {
+    "message": "Rephrase + tr."
+  },
+  "action_summarize": {
+    "message": "Summarize"
+  },
+  "action_summarize_hint": {
+    "message": "Summarize the selection (Ctrl+Shift+H)"
+  },
+  "action_summarize_page": {
+    "message": "Summarize page"
+  },
+  "action_summarize_page_hint": {
+    "message": "Summarize the page content (Ctrl+Shift+E)"
+  },
+  "action_summarize_page_short": {
+    "message": "Page"
+  },
+  "action_summarize_short": {
+    "message": "Summarize"
+  },
+  "action_translate": {
+    "message": "Translate"
+  },
+  "action_translate_hint": {
+    "message": "Translate the selection (Ctrl+Shift+Y)"
+  },
+  "action_translate_short": {
+    "message": "Translate"
+  },
+  "commandRephrase": {
+    "message": "Rephrase the selection"
+  },
+  "commandSummarizePage": {
+    "message": "Summarize the page"
+  },
+  "commandSummarizeSelection": {
+    "message": "Summarize the selection"
+  },
+  "commandTranslate": {
+    "message": "Translate the selection"
+  },
+  "error_anthropic_response": {
+    "message": "Error returned by Anthropic."
+  },
+  "error_base_url_missing": {
+    "message": "Base URL missing in the settings."
+  },
+  "error_base_url_missing_short": {
+    "message": "Base URL missing."
+  },
+  "error_connection_lost": {
+    "message": "The connection was interrupted before the response completed. Try again or check the settings."
+  },
+  "error_dedicated_too_long": {
+    "message": "This dedicated translation model accepts about $COUNT$ characters. Select a shorter passage.",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_detail": {
+    "message": "Detail: $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_empty_model_response": {
+    "message": "The model returned an empty response."
+  },
+  "error_empty_response": {
+    "message": "Empty or unexpected response from the provider."
+  },
+  "error_extension_unreachable": {
+    "message": "Cannot reach the extension: $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_http_access": {
+    "message": "Access denied ($STATUS$). Check the API key in the settings.",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_http_generic": {
+    "message": "Service error ($STATUS$).",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_http_not_found": {
+    "message": "Endpoint or model not found (404). Check the base URL and the model name."
+  },
+  "error_http_rate_limit": {
+    "message": "Quota or rate limit reached (429). Try again shortly."
+  },
+  "error_interrupted": {
+    "message": "Request interrupted."
+  },
+  "error_list_models_unexpected": {
+    "message": "Unexpected response from the model list."
+  },
+  "error_missing_api_key": {
+    "message": "API key missing for $LABEL$. Open the Lili settings.",
+    "placeholders": {
+      "LABEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_missing_base_url": {
+    "message": "Base URL missing for $LABEL$.",
+    "placeholders": {
+      "LABEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_missing_model_connection": {
+    "message": "Set a default model for this connection."
+  },
+  "error_missing_model_task": {
+    "message": "No model defined for this task ($LABEL$). Open the Lili settings.",
+    "placeholders": {
+      "LABEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_network": {
+    "message": "Cannot reach the API. Check the base URL and the host access permission in the settings."
+  },
+  "error_network_join": {
+    "message": "Cannot reach $LABEL$. Check the base URL, your connection, and the host access permission (“Save” button in the settings).",
+    "placeholders": {
+      "LABEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_no_connection": {
+    "message": "No connection configured. Open the Lili settings to add one."
+  },
+  "error_no_connection_short": {
+    "message": "No connection configured."
+  },
+  "error_no_text": {
+    "message": "No text to process."
+  },
+  "error_not_enough_page_text": {
+    "message": "This page does not contain enough text to summarize."
+  },
+  "error_page_too_short": {
+    "message": "This page does not seem to contain enough text to summarize (article, blog, documentation…)."
+  },
+  "error_provider_response": {
+    "message": "Error returned by the provider."
+  },
+  "error_selection_too_long": {
+    "message": "Selection too long: $COUNT$ characters (maximum $MAX$). Select a shorter passage, or use “Summarize page”.",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      },
+      "MAX": {
+        "content": "$2"
+      }
+    }
+  },
+  "error_send_failed": {
+    "message": "Could not send the request: $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_test_timeout": {
+    "message": "No response within 20 s. Check the URL and that the service is running."
+  },
+  "error_timeout": {
+    "message": "Timed out."
+  },
+  "error_timeout_long": {
+    "message": "Timed out (90 s without a response). Try shorter text, a faster model, or check the connection."
+  },
+  "error_unknown": {
+    "message": "Unknown error."
+  },
+  "error_unknown_action": {
+    "message": "Unknown action: $ACTION$",
+    "placeholders": {
+      "ACTION": {
+        "content": "$1"
+      }
+    }
+  },
+  "error_unknown_detail": {
+    "message": "unknown error"
+  },
+  "error_unsupported_action": {
+    "message": "Unsupported action: $ACTION$",
+    "placeholders": {
+      "ACTION": {
+        "content": "$1"
+      }
+    }
+  },
+  "extensionDescription": {
+    "message": "Translate, rephrase, fix and summarize the selection or the whole page."
+  },
+  "extensionName": {
+    "message": "Lili — translate, rephrase, summarize"
+  },
+  "language_en": {
+    "message": "English"
+  },
+  "language_fr": {
+    "message": "French"
+  },
+  "menu_fix": {
+    "message": "Fix the selection"
+  },
+  "menu_options": {
+    "message": "Lili settings…"
+  },
+  "menu_rephrase": {
+    "message": "Rephrase the selection"
+  },
+  "menu_rephrase_translate": {
+    "message": "Rephrase then translate"
+  },
+  "menu_summarize": {
+    "message": "Summarize the selection"
+  },
+  "menu_summarize_page": {
+    "message": "Summarize this page"
+  },
+  "menu_translate": {
+    "message": "Translate the selection"
+  },
+  "options_add_aria": {
+    "message": "Service to add"
+  },
+  "options_add_connection": {
+    "message": "Add connection"
+  },
+  "options_address": {
+    "message": "Address: $URL$",
+    "placeholders": {
+      "URL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_api_key": {
+    "message": "API key"
+  },
+  "options_api_type": {
+    "message": "API type"
+  },
+  "options_background_unreachable": {
+    "message": "No response from the background service: reload the extension and try again."
+  },
+  "options_base_url": {
+    "message": "Base URL"
+  },
+  "options_connection": {
+    "message": "Connection"
+  },
+  "options_connections_help": {
+    "message": "Add one or more services. Lili calls their API directly: nothing goes through an intermediate server. Each task can then use a different connection and model."
+  },
+  "options_connections_title": {
+    "message": "Connections"
+  },
+  "options_copied": {
+    "message": "Address copied: $URL$",
+    "placeholders": {
+      "URL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_copy_shortcuts": {
+    "message": "Copy the shortcuts address"
+  },
+  "options_custom_model": {
+    "message": "Other model…"
+  },
+  "options_custom_suffix": {
+    "message": "$MODEL$ · custom",
+    "placeholders": {
+      "MODEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_default_model": {
+    "message": "Default model"
+  },
+  "options_default_model_label": {
+    "message": "Default: $MODEL$",
+    "placeholders": {
+      "MODEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_failed": {
+    "message": "Failed: $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_fallback": {
+    "message": "Default"
+  },
+  "options_first_connection": {
+    "message": "First connection"
+  },
+  "options_hide": {
+    "message": "Hide"
+  },
+  "options_interface_title": {
+    "message": "Interface"
+  },
+  "options_languages_title": {
+    "message": "Languages"
+  },
+  "options_length": {
+    "message": "Summary length"
+  },
+  "options_length_court": {
+    "message": "Short"
+  },
+  "options_length_detaille": {
+    "message": "Detailed"
+  },
+  "options_length_moyen": {
+    "message": "Medium"
+  },
+  "options_limit_page": {
+    "message": "Maximum page analyzed (characters)"
+  },
+  "options_limit_selection": {
+    "message": "Maximum selection (characters)"
+  },
+  "options_limits_hint": {
+    "message": "Beyond these limits, text is truncated (page summary) or refused (selection)."
+  },
+  "options_limits_title": {
+    "message": "Limits"
+  },
+  "options_load_failed": {
+    "message": "Could not load settings: $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_load_models": {
+    "message": "Load models"
+  },
+  "options_loading_models": {
+    "message": "Loading models…"
+  },
+  "options_model": {
+    "message": "Model"
+  },
+  "options_model_default": {
+    "message": "$MODEL$ (default)",
+    "placeholders": {
+      "MODEL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_models_count": {
+    "message": "$COUNT$ models",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_models_loaded": {
+    "message": "$COUNT$ models loaded.",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_name": {
+    "message": "Name"
+  },
+  "options_network_denied": {
+    "message": "Network access denied for this host."
+  },
+  "options_no_connection": {
+    "message": "No connection yet. Add one with the menu below."
+  },
+  "options_no_model": {
+    "message": "— default —"
+  },
+  "options_none": {
+    "message": "— none —"
+  },
+  "options_output": {
+    "message": "Summary language"
+  },
+  "options_output_en": {
+    "message": "In English"
+  },
+  "options_output_fr": {
+    "message": "In French"
+  },
+  "options_placeholder_model": {
+    "message": "model"
+  },
+  "options_preset_added": {
+    "message": "$PRESET$ added. Fill in the API key, then save.",
+    "placeholders": {
+      "PRESET": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_remove": {
+    "message": "Remove"
+  },
+  "options_remove_confirm": {
+    "message": "Remove the connection “$NAME$”?",
+    "placeholders": {
+      "NAME": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_reset": {
+    "message": "Reset"
+  },
+  "options_reset_confirm": {
+    "message": "Restore all default settings (including API keys)?"
+  },
+  "options_reset_done": {
+    "message": "Settings reset."
+  },
+  "options_reset_failed": {
+    "message": "Reset failed."
+  },
+  "options_resetting": {
+    "message": "Resetting…"
+  },
+  "options_reveal": {
+    "message": "Show"
+  },
+  "options_routes_help": {
+    "message": "Pick the connection and model for each task. Keep the connection on “Default” to reuse the default connection; leave the model empty to use the connection’s default model."
+  },
+  "options_routes_hint": {
+    "message": "Dedicated translation models (for example Olala-v1.0-translate) automatically receive the source and target languages, with no system prompt. On “Rephrase + translate”, such a model translates without rephrasing."
+  },
+  "options_routes_title": {
+    "message": "Models per task"
+  },
+  "options_save": {
+    "message": "Save"
+  },
+  "options_save_error": {
+    "message": "Error: $DETAIL$",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_save_failed": {
+    "message": "saving failed"
+  },
+  "options_saved": {
+    "message": "Settings saved."
+  },
+  "options_saved_denied": {
+    "message": "Settings saved, but network access to a host is denied$DETAIL$. The API must then allow CORS.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_saving": {
+    "message": "Saving…"
+  },
+  "options_shortcut_assigned": {
+    "message": "assigned · $KEYS$",
+    "placeholders": {
+      "KEYS": {
+        "content": "$1"
+      }
+    }
+  },
+  "options_shortcut_page": {
+    "message": "Summarize the page"
+  },
+  "options_shortcut_rephrase": {
+    "message": "Rephrase the selection"
+  },
+  "options_shortcut_summarize": {
+    "message": "Summarize the selection"
+  },
+  "options_shortcut_translate": {
+    "message": "Translate the selection"
+  },
+  "options_shortcut_unassigned": {
+    "message": "not assigned"
+  },
+  "options_shortcuts_hint": {
+    "message": "Chrome may keep an old shortcut or leave the field empty after an update. Click the pencil in chrome://extensions/shortcuts (Firefox: about:addons → “Manage shortcuts”) to assign it. Shortcuts also work directly in the page, even when Chrome reports them as unassigned."
+  },
+  "options_shortcuts_title": {
+    "message": "Shortcuts"
+  },
+  "options_sites_disabled": {
+    "message": "Disable the floating bar"
+  },
+  "options_sites_disabled_hint": {
+    "message": "One domain per line. Actions remain available from the context menu and the popup."
+  },
+  "options_sites_help": {
+    "message": "Rules applied to the page’s domain. A domain also covers its subdomains."
+  },
+  "options_sites_targets": {
+    "message": "Translation target language per domain"
+  },
+  "options_sites_targets_hint": {
+    "message": "Format: domain = fr or domain = en. Takes precedence over the global setting."
+  },
+  "options_sites_title": {
+    "message": "Sites"
+  },
+  "options_style_title": {
+    "message": "Style"
+  },
+  "options_tagline": {
+    "message": "Translate, rephrase, summarize — without leaving the page."
+  },
+  "options_target_auto": {
+    "message": "FR ↔ EN automatic"
+  },
+  "options_target_en": {
+    "message": "Always to English"
+  },
+  "options_target_fr": {
+    "message": "Always to French"
+  },
+  "options_task": {
+    "message": "Task"
+  },
+  "options_test": {
+    "message": "Test"
+  },
+  "options_test_failed": {
+    "message": "Test failed."
+  },
+  "options_test_ok": {
+    "message": "Connection OK in $MS$ ms — “$TEXT$”",
+    "placeholders": {
+      "MS": {
+        "content": "$1"
+      },
+      "TEXT": {
+        "content": "$2"
+      }
+    }
+  },
+  "options_testing": {
+    "message": "Testing…"
+  },
+  "options_title": {
+    "message": "Settings — Lili"
+  },
+  "options_tone": {
+    "message": "Rephrase tone"
+  },
+  "options_tone_academique": {
+    "message": "Academic"
+  },
+  "options_tone_decontracte": {
+    "message": "Casual"
+  },
+  "options_tone_neutre": {
+    "message": "Neutral"
+  },
+  "options_tone_professionnel": {
+    "message": "Professional"
+  },
+  "options_translation": {
+    "message": "Translation"
+  },
+  "options_ui_actions": {
+    "message": "Floating bar actions"
+  },
+  "options_ui_auto_replace": {
+    "message": "Automatically replace text in editable fields (Ctrl+Z to undo)"
+  },
+  "options_ui_context": {
+    "message": "Send the paragraph around the selection as context"
+  },
+  "options_ui_diff_hint": {
+    "message": "The before/after diff appears for editable fields when “Automatically replace” and “Direct mode” are off. Outside editable fields, there is nothing to replace."
+  },
+  "options_ui_direct": {
+    "message": "Replace directly in fields without showing the panel"
+  },
+  "options_ui_markdown": {
+    "message": "Render Markdown in results (bold, lists, headings)"
+  },
+  "options_ui_toolbar": {
+    "message": "Show the floating bar near the selection"
+  },
+  "panel_back": {
+    "message": "Back"
+  },
+  "panel_cancel": {
+    "message": "Cancel"
+  },
+  "panel_close": {
+    "message": "Close (Esc)"
+  },
+  "panel_close_short": {
+    "message": "Close"
+  },
+  "panel_compare_hint": {
+    "message": "Review the changes before replacing."
+  },
+  "panel_confirm": {
+    "message": "Confirm"
+  },
+  "panel_copy": {
+    "message": "Copy"
+  },
+  "panel_dialog_label": {
+    "message": "Lili result"
+  },
+  "panel_escape": {
+    "message": "Esc"
+  },
+  "panel_history": {
+    "message": "History"
+  },
+  "panel_history_add_favorite": {
+    "message": "Add to favorites"
+  },
+  "panel_history_all": {
+    "message": "All"
+  },
+  "panel_history_clear": {
+    "message": "Clear"
+  },
+  "panel_history_clear_confirm": {
+    "message": "Clear the whole result history?"
+  },
+  "panel_history_empty": {
+    "message": "No results yet."
+  },
+  "panel_history_favorites": {
+    "message": "Favorites"
+  },
+  "panel_history_hours": {
+    "message": "$COUNT$ h ago",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "panel_history_loading": {
+    "message": "Loading…"
+  },
+  "panel_history_minutes": {
+    "message": "$COUNT$ min ago",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "panel_history_no_favorites": {
+    "message": "No favorites."
+  },
+  "panel_history_now": {
+    "message": "just now"
+  },
+  "panel_history_remove": {
+    "message": "Delete"
+  },
+  "panel_history_remove_favorite": {
+    "message": "Remove from favorites"
+  },
+  "panel_no_changes": {
+    "message": "No changes."
+  },
+  "panel_replace": {
+    "message": "Replace…"
+  },
+  "panel_replace_title": {
+    "message": "Compare before replacing"
+  },
+  "panel_resize": {
+    "message": "Resize"
+  },
+  "panel_result": {
+    "message": "Result"
+  },
+  "panel_retry": {
+    "message": "Retry"
+  },
+  "panel_sending": {
+    "message": "Sending the request…"
+  },
+  "panel_settings": {
+    "message": "Settings"
+  },
+  "panel_stop": {
+    "message": "Stop"
+  },
+  "panel_stopped": {
+    "message": "Generation stopped."
+  },
+  "panel_toolbar_label": {
+    "message": "Lili actions"
+  },
+  "popup_chars": {
+    "message": "$COUNT$ chars",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_error_action": {
+    "message": "Could not act on this page: $DETAIL$. Reload the page and try again.",
+    "placeholders": {
+      "DETAIL": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_error_blocked": {
+    "message": "This page does not allow Lili actions."
+  },
+  "popup_error_connection_refused": {
+    "message": "connection refused"
+  },
+  "popup_error_no_injection": {
+    "message": "This page does not allow extension injection (internal page, PDF, Web Store). Open a regular web page."
+  },
+  "popup_error_no_tab": {
+    "message": "No active tab detected."
+  },
+  "popup_footer": {
+    "message": "Ctrl+Shift+Y translates the selection"
+  },
+  "popup_free_text": {
+    "message": "Free text"
+  },
+  "popup_no_connection": {
+    "message": "No connection"
+  },
+  "popup_no_selection": {
+    "message": "No selection detected."
+  },
+  "popup_placeholder": {
+    "message": "Paste text to translate, rephrase or summarize…"
+  },
+  "popup_selection": {
+    "message": "Selection"
+  },
+  "popup_settings": {
+    "message": "Settings"
+  },
+  "popup_summarize_page": {
+    "message": "Summarize this page"
+  },
+  "preset_anthropic": {
+    "message": "Anthropic"
+  },
+  "preset_custom": {
+    "message": "Custom (OpenAI-compatible)"
+  },
+  "preset_go": {
+    "message": "OpenCode Go"
+  },
+  "preset_ollama": {
+    "message": "Ollama (local)"
+  },
+  "preset_openai": {
+    "message": "OpenAI"
+  },
+  "preset_openrouter": {
+    "message": "OpenRouter"
+  },
+  "preset_ovh": {
+    "message": "OVHcloud AI Endpoints"
+  },
+  "preset_zen": {
+    "message": "OpenCode Zen"
+  },
+  "status_reading_section": {
+    "message": "Reading the page… section $INDEX$/$TOTAL$",
+    "placeholders": {
+      "INDEX": {
+        "content": "$1"
+      },
+      "TOTAL": {
+        "content": "$2"
+      }
+    }
+  },
+  "status_synthesizing": {
+    "message": "Synthesizing the summary…"
+  },
+  "summary_section_one": {
+    "message": "1 section"
+  },
+  "summary_sections": {
+    "message": "$COUNT$ sections",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "toast_copied": {
+    "message": "Copied to the clipboard."
+  },
+  "toast_copy_failed": {
+    "message": "Could not copy."
+  },
+  "toast_processing": {
+    "message": "Working…"
+  },
+  "toast_replace_failed": {
+    "message": "Could not replace."
+  },
+  "toast_replace_failed_changed": {
+    "message": "Could not replace: the field may have changed."
+  },
+  "toast_replaced": {
+    "message": "Text replaced. Ctrl+Z to undo."
+  },
+  "toast_select_or_paste": {
+    "message": "Select some text first, or paste it in the popup."
+  },
+  "toast_select_text": {
+    "message": "Select some text first."
+  }
+}

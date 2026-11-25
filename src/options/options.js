@@ -4,6 +4,27 @@
 
   const api = globalThis.browser || globalThis.chrome;
   const LILI = globalThis.LILI || { ACTIONS: {}, SELECTION_ACTIONS: [] };
+  const I18N = globalThis.LILI_I18N || { t: (key) => key, locale: 'en' };
+  const t = (key, substitutions) => I18N.t(key, substitutions);
+
+  /** Translate every [data-i18n*] node, including those inside <template>. */
+  function localize(root) {
+    for (const element of root.querySelectorAll('[data-i18n]')) {
+      element.textContent = t(element.getAttribute('data-i18n'));
+    }
+    for (const element of root.querySelectorAll('[data-i18n-placeholder]')) {
+      element.setAttribute('placeholder', t(element.getAttribute('data-i18n-placeholder')));
+    }
+    for (const element of root.querySelectorAll('[data-i18n-title]')) {
+      element.setAttribute('title', t(element.getAttribute('data-i18n-title')));
+    }
+    for (const element of root.querySelectorAll('[data-i18n-aria-label]')) {
+      element.setAttribute('aria-label', t(element.getAttribute('data-i18n-aria-label')));
+    }
+    for (const template of root.querySelectorAll('template')) {
+      localize(template.content);
+    }
+  }
 
   const TASKS = [
     'translate',
@@ -18,56 +39,56 @@
   const PRESETS = [
     {
       id: 'openai',
-      label: 'OpenAI',
+      labelKey: 'preset_openai',
       type: 'openai',
       baseUrl: 'https://api.openai.com/v1',
       model: 'gpt-4o-mini',
     },
     {
       id: 'openrouter',
-      label: 'OpenRouter',
+      labelKey: 'preset_openrouter',
       type: 'openai',
       baseUrl: 'https://openrouter.ai/api/v1',
       model: 'openai/gpt-4o-mini',
     },
     {
       id: 'ovh',
-      label: 'OVHcloud AI Endpoints',
+      labelKey: 'preset_ovh',
       type: 'openai',
       baseUrl: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1',
       model: 'Olala-v1.0-mini-7A1B',
     },
     {
       id: 'zen',
-      label: 'OpenCode Zen',
+      labelKey: 'preset_zen',
       type: 'openai',
       baseUrl: 'https://opencode.ai/zen/v1',
       model: 'deepseek-v4-flash',
     },
     {
       id: 'go',
-      label: 'OpenCode Go',
+      labelKey: 'preset_go',
       type: 'openai',
       baseUrl: 'https://opencode.ai/inference/go/openai/v1',
       model: 'kimi-k3',
     },
     {
       id: 'anthropic',
-      label: 'Anthropic',
+      labelKey: 'preset_anthropic',
       type: 'anthropic',
       baseUrl: 'https://api.anthropic.com',
       model: 'claude-3-5-haiku-latest',
     },
     {
       id: 'ollama',
-      label: 'Ollama (local)',
+      labelKey: 'preset_ollama',
       type: 'ollama',
       baseUrl: 'http://localhost:11434',
       model: 'llama3.1:8b',
     },
     {
       id: 'custom',
-      label: 'Personnalisé (OpenAI-compatible)',
+      labelKey: 'preset_custom',
       type: 'openai',
       baseUrl: '',
       model: '',
@@ -173,7 +194,7 @@
       input.dataset.action = id;
 
       const span = document.createElement('span');
-      span.textContent = meta.label;
+      span.textContent = t(meta.labelKey);
 
       label.append(input, span);
       box.appendChild(label);
@@ -305,9 +326,9 @@
       models: [],
       value: options.value || '',
       custom: false,
-      emptyLabel: options.emptyLabel || '— défaut —',
+      emptyLabel: options.emptyLabel || t('options_no_model'),
       kind: options.kind || 'route',
-      placeholder: 'modèle',
+      placeholder: t('options_placeholder_model'),
       getConnection: options.getConnection || (() => null),
       onChange: options.onChange || (() => {}),
     };
@@ -339,13 +360,13 @@
       if (picker.value && !picker.models.includes(picker.value)) {
         const option = document.createElement('option');
         option.value = picker.value;
-        option.textContent = picker.value + ' · personnalisé';
+        option.textContent = t('options_custom_suffix', [picker.value]);
         select.appendChild(option);
       }
 
       const custom = document.createElement('option');
       custom.value = '__custom__';
-      custom.textContent = 'Autre modèle…';
+      custom.textContent = t('options_custom_model');
       select.appendChild(custom);
 
       if (picker.custom) {
@@ -395,10 +416,14 @@
     for (const picker of pickers) {
       const connection = picker.getConnection();
       picker.models = connection ? modelCache[connection.id] || [] : [];
-      picker.placeholder = connection && connection.model ? connection.model + ' (défaut)' : 'modèle';
+      picker.placeholder = connection && connection.model
+        ? t('options_model_default', [connection.model])
+        : t('options_placeholder_model');
       if (picker.kind === 'route') {
         picker.emptyLabel =
-          connection && connection.model ? 'Défaut : ' + connection.model : '— défaut —';
+          connection && connection.model
+            ? t('options_default_model_label', [connection.model])
+            : t('options_no_model');
       }
       picker.render();
     }
@@ -409,7 +434,7 @@
       const count = card.querySelector('.conn-count');
       if (!count) continue;
       const models = modelCache[card.dataset.id] || [];
-      count.textContent = models.length ? models.length + ' modèles' : '';
+      count.textContent = models.length ? t('options_models_count', [String(models.length)]) : '';
     }
   }
 
@@ -445,7 +470,7 @@
     const slot = fragment.querySelector('[data-field="model"]');
     const picker = createModelPicker({
       value: connection.model,
-      emptyLabel: '— aucun —',
+      emptyLabel: t('options_none'),
       kind: 'connection',
       getConnection: () => connection,
       onChange: (value) => {
@@ -465,7 +490,7 @@
     if (!state.connections.length) {
       const empty = document.createElement('p');
       empty.className = 'empty';
-      empty.textContent = 'Aucune connexion. Ajoute-en une avec le menu ci-dessous.';
+      empty.textContent = t('options_no_connection');
       box.appendChild(empty);
       return;
     }
@@ -485,7 +510,7 @@
 
     const emptyOption = document.createElement('option');
     emptyOption.value = '';
-    emptyOption.textContent = isFallback ? 'Première connexion' : 'Par défaut';
+    emptyOption.textContent = isFallback ? t('options_first_connection') : t('options_fallback');
     select.appendChild(emptyOption);
 
     for (const connection of state.connections) {
@@ -505,7 +530,7 @@
 
     const picker = createModelPicker({
       value: route.model,
-      emptyLabel: '— défaut —',
+      emptyLabel: t('options_no_model'),
       getConnection: effectiveConnection,
       onChange: (value) => {
         route.model = value;
@@ -527,19 +552,23 @@
 
     const header = document.createElement('div');
     header.className = 'route route-head';
-    for (const text of ['Tâche', 'Connexion', 'Modèle']) {
+    for (const text of [
+      t('options_task'),
+      t('options_connection'),
+      t('options_model'),
+    ]) {
       const cell = document.createElement('span');
       cell.textContent = text;
       header.appendChild(cell);
     }
     box.appendChild(header);
 
-    box.appendChild(buildRoute('__fallback__', 'Par défaut', state.fallback, true));
+    box.appendChild(buildRoute('__fallback__', t('options_fallback'), state.fallback, true));
 
     for (const id of TASKS) {
       if (!state.routing[id]) state.routing[id] = { connection: '', model: '' };
       const meta = LILI.ACTIONS[id];
-      box.appendChild(buildRoute(id, (meta && meta.label) || id, state.routing[id], false));
+      box.appendChild(buildRoute(id, (meta && t(meta.labelKey)) || id, state.routing[id], false));
     }
   }
 
@@ -559,7 +588,7 @@
 
     state.connections.push({
       id: uniqueId(preset.id),
-      label: preset.label,
+      label: t(preset.labelKey),
       type: preset.type,
       baseUrl: preset.baseUrl,
       apiKey: '',
@@ -569,13 +598,13 @@
     renderAll();
     const status = $('#connections-status');
     status.hidden = false;
-    status.textContent = preset.label + ' ajouté. Renseigne la clé API puis enregistre.';
+    status.textContent = t('options_preset_added', [t(preset.labelKey)]);
   }
 
   function removeConnection(id) {
     const connection = state.connections.find((item) => item.id === id);
     if (!connection) return;
-    if (!confirm('Supprimer la connexion « ' + (connection.label || id) + ' » ?')) return;
+    if (!confirm(t('options_remove_confirm', [connection.label || id]))) return;
 
     collectStatic();
     state.connections = state.connections.filter((item) => item.id !== id);
@@ -594,48 +623,51 @@
   async function testConnection(connection, card) {
     const permission = await ensurePermissions([originOf(connection.baseUrl)]);
     if (!permission.ok) {
-      cardMessage(card, 'Accès réseau refusé pour cet hôte.', true);
+      cardMessage(card, t('options_network_denied'), true);
       return;
     }
 
-    cardMessage(card, 'Test en cours…');
+    cardMessage(card, t('options_testing'));
     try {
       const response = await send({ type: 'lili:test', connection });
       if (response && response.ok) {
-        cardMessage(card, 'Connexion OK en ' + response.ms + ' ms — « ' + response.text + ' »');
+        cardMessage(card, t('options_test_ok', [String(response.ms), response.text]));
       } else {
-        cardMessage(card, (response && response.error) || 'Échec du test.', true);
+        cardMessage(card, (response && response.error) || t('options_test_failed'), true);
       }
     } catch (error) {
-      cardMessage(card, 'Échec : ' + ((error && error.message) || error), true);
+      cardMessage(card, t('options_failed', [(error && error.message) || String(error)]), true);
     }
   }
 
   async function loadModels(connection, card) {
     const permission = await ensurePermissions([originOf(connection.baseUrl)]);
     if (!permission.ok) {
-      cardMessage(card, 'Accès réseau refusé pour cet hôte.', true);
+      cardMessage(card, t('options_network_denied'), true);
       return;
     }
 
-    cardMessage(card, 'Chargement des modèles…');
+    cardMessage(card, t('options_loading_models'));
     try {
       const response = await send({ type: 'lili:list-models', connection, refresh: true });
       if (response && response.ok) {
         modelCache[connection.id] = response.models || [];
         refreshPickers();
         updateCounts();
-        cardMessage(card, modelCache[connection.id].length + ' modèles chargés.');
+        cardMessage(
+          card,
+          t('options_models_loaded', [String(modelCache[connection.id].length)])
+        );
       } else {
         cardMessage(
           card,
           (response && response.error) ||
-            'Aucune réponse du service d’arrière-plan : recharge l’extension puis réessaie.',
+            t('options_background_unreachable'),
           true
         );
       }
     } catch (error) {
-      cardMessage(card, 'Échec : ' + ((error && error.message) || error), true);
+      cardMessage(card, t('options_failed', [(error && error.message) || String(error)]), true);
     }
   }
 
@@ -675,7 +707,9 @@
 
     for (const state of states) {
       const shortcut = shortcuts[state.getAttribute('data-shortcut')] || '';
-      state.textContent = shortcut ? 'assigné · ' + shortcut : 'non assigné';
+      state.textContent = shortcut
+        ? t('options_shortcut_assigned', [shortcut])
+        : t('options_shortcut_unassigned');
       state.classList.toggle('warn', !shortcut);
     }
   }
@@ -688,45 +722,43 @@
       .filter(Boolean);
 
     const permission = await ensurePermissions(origins);
-    setStatus('Enregistrement…');
+    setStatus(t('options_saving'));
 
     let response;
     try {
       response = await send({ type: 'lili:save-settings', settings: serialize() });
     } catch (error) {
-      setStatus('Erreur : ' + ((error && error.message) || error), 'err');
+      setStatus(t('options_save_error', [(error && error.message) || String(error)]), 'err');
       return;
     }
 
     if (!response || !response.ok) {
-      setStatus('Erreur : ' + ((response && response.error) || 'enregistrement impossible'), 'err');
+      setStatus(t('options_save_error', [(response && response.error) || t('options_save_failed')]), 'err');
       return;
     }
 
     load(response.settings);
 
     if (permission.ok) {
-      setStatus('Réglages enregistrés.', 'ok');
+      setStatus(t('options_saved'), 'ok');
     } else {
       setStatus(
-        'Réglages enregistrés, mais l’accès réseau à un hôte est refusé' +
-          (permission.error ? ' (' + permission.error + ')' : '') +
-          '. L’API doit alors autoriser CORS.',
+        t('options_saved_denied', [permission.error ? ' (' + permission.error + ')' : '']),
         'err'
       );
     }
   }
 
   async function reset() {
-    if (!confirm('Rétablir tous les réglages par défaut (clés API comprises) ?')) return;
-    setStatus('Réinitialisation…');
+    if (!confirm(t('options_reset_confirm'))) return;
+    setStatus(t('options_resetting'));
 
     const response = await send({ type: 'lili:reset-settings' });
     if (response && response.ok) {
       load(response.settings);
-      setStatus('Réglages réinitialisés.', 'ok');
+      setStatus(t('options_reset_done'), 'ok');
     } else {
-      setStatus('Réinitialisation impossible.', 'err');
+      setStatus(t('options_reset_failed'), 'err');
     }
   }
 
@@ -746,7 +778,7 @@
       const input = card.querySelector('[data-field="apiKey"]');
       const reveal = input.type === 'password';
       input.type = reveal ? 'text' : 'password';
-      button.textContent = reveal ? 'Masquer' : 'Afficher';
+      button.textContent = reveal ? t('options_hide') : t('options_reveal');
     } else if (action === 'test') {
       testConnection(connection, card);
     } else if (action === 'models') {
@@ -761,7 +793,7 @@
     for (const preset of PRESETS) {
       const option = document.createElement('option');
       option.value = preset.id;
-      option.textContent = preset.label;
+      option.textContent = t(preset.labelKey);
       select.appendChild(option);
     }
   }
@@ -769,7 +801,7 @@
   function load(settings) {
     state.connections = (settings.connections || []).map((connection, index) => ({
       id: connection.id || 'connection-' + (index + 1),
-      label: connection.label || connection.id || 'Connexion',
+      label: connection.label || connection.id || t('options_connection'),
       type: connection.type || 'openai',
       baseUrl: connection.baseUrl || '',
       apiKey: connection.apiKey || '',
@@ -815,9 +847,9 @@
     const status = $('#shortcuts-status');
     try {
       await navigator.clipboard.writeText(shortcutsUrl);
-      status.textContent = 'Adresse copiée : ' + shortcutsUrl;
+      status.textContent = t('options_copied', [shortcutsUrl]);
     } catch {
-      status.textContent = 'Adresse : ' + shortcutsUrl;
+      status.textContent = t('options_address', [shortcutsUrl]);
     }
     setTimeout(() => {
       status.textContent = '';
@@ -849,6 +881,8 @@
       /* ignore */
     }
 
+    localize(document);
+    document.documentElement.lang = I18N.locale;
     populatePresets();
 
     try {
@@ -856,7 +890,7 @@
       if (settings) load(settings);
       refreshShortcutStatus();
     } catch (error) {
-      setStatus('Impossible de charger les réglages : ' + ((error && error.message) || error), 'err');
+      setStatus(t('options_load_failed', [(error && error.message) || String(error)]), 'err');
     }
   })();
 })();

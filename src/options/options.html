@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Réglages — Lili</title>
+    <title data-i18n="options_title">Settings — Lili</title>
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
@@ -12,7 +12,7 @@
         <img src="../icons/icon-48.png" alt="" width="36" height="36" />
         <div>
           <h1>Lili</h1>
-          <p>Traduire, reformuler, résumer — sans quitter la page.</p>
+          <p data-i18n="options_tagline">Translate, rephrase, summarize — without leaving the page.</p>
         </div>
       </div>
       <span class="version"></span>
@@ -20,191 +20,209 @@
 
     <main>
       <section class="card">
-        <h2>Connexions</h2>
-        <p class="help">
-          Ajoute un ou plusieurs services. Lili appelle directement leur API : rien ne transite par un
-          serveur intermédiaire. Chaque tâche pourra ensuite utiliser une connexion et un modèle
-          différents.
+        <h2 data-i18n="options_connections_title">Connections</h2>
+        <p class="help" data-i18n="options_connections_help">
+          Add one or more services. Lili calls their API directly: nothing goes through an
+          intermediate server. Each task can then use a different connection and model.
         </p>
 
         <div id="connections" class="connections"></div>
 
         <div class="row add-row">
-          <select id="preset" aria-label="Service à ajouter"></select>
-          <button type="button" id="add-connection" class="secondary">Ajouter la connexion</button>
+          <select id="preset" data-i18n-aria-label="options_add_aria" aria-label="Service to add"></select>
+          <button type="button" id="add-connection" class="secondary" data-i18n="options_add_connection">
+            Add connection
+          </button>
         </div>
 
         <p id="connections-status" class="hint" hidden></p>
       </section>
 
       <section class="card">
-        <h2>Modèles par tâche</h2>
-        <p class="help">
-          Choisis la connexion et le modèle de chaque tâche. Laisse la connexion sur
-          « Par défaut » pour réutiliser la connexion par défaut ; laisse le modèle vide pour
-          utiliser le modèle par défaut de la connexion.
+        <h2 data-i18n="options_routes_title">Models per task</h2>
+        <p class="help" data-i18n="options_routes_help">
+          Pick the connection and model for each task. Keep the connection on “Default” to reuse the
+          default connection; leave the model empty to use the connection’s default model.
         </p>
 
         <div id="routes" class="routes"></div>
 
-        <p class="hint">
-          Les modèles de traduction dédiés (par exemple <code>Olala-v1.0-translate</code>) reçoivent
-          automatiquement les langues source et cible, sans prompt système. Sur « Reformuler +
-          traduire », un tel modèle traduit sans reformuler.
+        <p class="hint" data-i18n="options_routes_hint">
+          Dedicated translation models (for example Olala-v1.0-translate) automatically receive the
+          source and target languages, with no system prompt. On “Rephrase + translate”, such a model
+          translates without rephrasing.
         </p>
       </section>
 
       <section class="card">
-        <h2>Langues</h2>
+        <h2 data-i18n="options_languages_title">Languages</h2>
         <div class="grid">
           <div class="field">
-            <label for="translateTarget">Traduction</label>
+            <label for="translateTarget" data-i18n="options_translation">Translation</label>
             <select id="translateTarget">
-              <option value="auto">FR ↔ EN automatique</option>
-              <option value="fr">Toujours vers le français</option>
-              <option value="en">Toujours vers l’anglais</option>
+              <option value="auto" data-i18n="options_target_auto">FR ↔ EN automatic</option>
+              <option value="fr" data-i18n="options_target_fr">Always to French</option>
+              <option value="en" data-i18n="options_target_en">Always to English</option>
             </select>
           </div>
           <div class="field">
-            <label for="output">Langue des résumés</label>
+            <label for="output" data-i18n="options_output">Summary language</label>
             <select id="output">
-              <option value="fr">En français</option>
-              <option value="en">En anglais</option>
+              <option value="fr" data-i18n="options_output_fr">In French</option>
+              <option value="en" data-i18n="options_output_en">In English</option>
             </select>
           </div>
         </div>
       </section>
 
       <section class="card">
-        <h2>Style</h2>
+        <h2 data-i18n="options_style_title">Style</h2>
         <div class="grid">
           <div class="field">
-            <label for="tone">Ton de la reformulation</label>
+            <label for="tone" data-i18n="options_tone">Rephrase tone</label>
             <select id="tone">
-              <option value="neutre">Neutre</option>
-              <option value="professionnel">Professionnel</option>
-              <option value="decontracte">Décontracté</option>
-              <option value="academique">Académique</option>
+              <option value="neutre" data-i18n="options_tone_neutre">Neutral</option>
+              <option value="professionnel" data-i18n="options_tone_professionnel">Professional</option>
+              <option value="decontracte" data-i18n="options_tone_decontracte">Casual</option>
+              <option value="academique" data-i18n="options_tone_academique">Academic</option>
             </select>
           </div>
           <div class="field">
-            <label for="length">Longueur du résumé</label>
+            <label for="length" data-i18n="options_length">Summary length</label>
             <select id="length">
-              <option value="court">Court</option>
-              <option value="moyen">Moyen</option>
-              <option value="detaille">Détaillé</option>
+              <option value="court" data-i18n="options_length_court">Short</option>
+              <option value="moyen" data-i18n="options_length_moyen">Medium</option>
+              <option value="detaille" data-i18n="options_length_detaille">Detailed</option>
             </select>
           </div>
         </div>
       </section>
 
       <section class="card">
-        <h2>Interface</h2>
+        <h2 data-i18n="options_interface_title">Interface</h2>
 
         <label class="check">
           <input type="checkbox" id="toolbar" />
-          <span>Afficher la barre flottante près de la sélection</span>
+          <span data-i18n="options_ui_toolbar">Show the floating bar near the selection</span>
         </label>
 
         <label class="check">
           <input type="checkbox" id="autoReplace" />
-          <span>Remplacer automatiquement le texte des champs éditables (Ctrl+Z pour annuler)</span>
+          <span data-i18n="options_ui_auto_replace">
+            Automatically replace text in editable fields (Ctrl+Z to undo)
+          </span>
         </label>
 
         <label class="check">
           <input type="checkbox" id="directMode" />
-          <span>Remplacer directement dans les champs, sans afficher le panneau</span>
+          <span data-i18n="options_ui_direct">
+            Replace directly in fields without showing the panel
+          </span>
         </label>
 
         <label class="check">
           <input type="checkbox" id="context" />
-          <span>Envoyer le paragraphe autour de la sélection comme contexte</span>
+          <span data-i18n="options_ui_context">
+            Send the paragraph around the selection as context
+          </span>
         </label>
 
         <label class="check">
           <input type="checkbox" id="markdown" />
-          <span>Interpréter le Markdown des résultats (gras, listes, titres)</span>
+          <span data-i18n="options_ui_markdown">Render Markdown in results (bold, lists, headings)</span>
         </label>
 
-        <p class="hint">
-          Le diff avant/après s’affiche pour les champs éditables quand « Remplacer automatiquement »
-          et « Mode direct » sont désactivés. Hors champ éditable, il n’y a rien à remplacer.
+        <p class="hint" data-i18n="options_ui_diff_hint">
+          The before/after diff appears for editable fields when “Automatically replace” and “Direct
+          mode” are off. Outside editable fields, there is nothing to replace.
         </p>
 
         <fieldset class="field">
-          <legend>Actions de la barre flottante</legend>
+          <legend data-i18n="options_ui_actions">Floating bar actions</legend>
           <div id="actions" class="checks"></div>
         </fieldset>
       </section>
 
       <section class="card">
-        <h2>Sites</h2>
-        <p class="help">
-          Règles appliquées au domaine de la page. Un domaine couvre aussi ses sous-domaines.
+        <h2 data-i18n="options_sites_title">Sites</h2>
+        <p class="help" data-i18n="options_sites_help">
+          Rules applied to the page’s domain. A domain also covers its subdomains.
         </p>
         <div class="field">
-          <label for="sitesDisabled">Désactiver la barre flottante</label>
+          <label for="sitesDisabled" data-i18n="options_sites_disabled">Disable the floating bar</label>
           <textarea id="sitesDisabled" rows="4" placeholder="example.com&#10;intranet.example.org"></textarea>
-          <p class="hint">
-            Un domaine par ligne. Les actions restent accessibles par le menu contextuel et le popup.
+          <p class="hint" data-i18n="options_sites_disabled_hint">
+            One domain per line. Actions remain available from the context menu and the popup.
           </p>
         </div>
         <div class="field">
-          <label for="sitesTargets">Langue cible de traduction par domaine</label>
+          <label for="sitesTargets" data-i18n="options_sites_targets">
+            Translation target language per domain
+          </label>
           <textarea id="sitesTargets" rows="3" placeholder="example.com = fr&#10;news.example.org = en"></textarea>
-          <p class="hint">
-            Format : <code>domaine = fr</code> ou <code>domaine = en</code>. Prioritaire sur le réglage
-            global.
+          <p class="hint" data-i18n="options_sites_targets_hint">
+            Format: domain = fr or domain = en. Takes precedence over the global setting.
           </p>
         </div>
       </section>
 
       <section class="card">
-        <h2>Limites</h2>
+        <h2 data-i18n="options_limits_title">Limits</h2>
         <div class="grid">
           <div class="field">
-            <label for="maxSelectionChars">Sélection maximale (caractères)</label>
+            <label for="maxSelectionChars" data-i18n="options_limit_selection">Maximum selection (characters)</label>
             <input id="maxSelectionChars" type="number" min="500" step="500" />
           </div>
           <div class="field">
-            <label for="maxPageChars">Page maximale analysée (caractères)</label>
+            <label for="maxPageChars" data-i18n="options_limit_page">Maximum page analyzed (characters)</label>
             <input id="maxPageChars" type="number" min="10000" step="10000" />
           </div>
         </div>
-        <p class="hint">
-          Au-delà de ces limites, le texte est tronqué (résumé de page) ou refusé (sélection).
+        <p class="hint" data-i18n="options_limits_hint">
+          Beyond these limits, text is truncated (page summary) or refused (selection).
         </p>
       </section>
 
       <section class="card">
-        <h2>Raccourcis</h2>
+        <h2 data-i18n="options_shortcuts_title">Shortcuts</h2>
         <dl class="keys">
           <div>
-            <dt>Ctrl + Maj + Y</dt>
-            <dd>Traduire la sélection <span class="shortcut-state" data-shortcut="translate-selection"></span></dd>
+            <dt>Ctrl + Shift + Y</dt>
+            <dd>
+              <span data-i18n="options_shortcut_translate">Translate the selection</span>
+              <span class="shortcut-state" data-shortcut="translate-selection"></span>
+            </dd>
           </div>
           <div>
-            <dt>Ctrl + Maj + U</dt>
-            <dd>Reformuler la sélection <span class="shortcut-state" data-shortcut="rephrase-selection"></span></dd>
+            <dt>Ctrl + Shift + U</dt>
+            <dd>
+              <span data-i18n="options_shortcut_rephrase">Rephrase the selection</span>
+              <span class="shortcut-state" data-shortcut="rephrase-selection"></span>
+            </dd>
           </div>
           <div>
-            <dt>Ctrl + Maj + H</dt>
-            <dd>Résumer la sélection <span class="shortcut-state" data-shortcut="summarize-selection"></span></dd>
+            <dt>Ctrl + Shift + H</dt>
+            <dd>
+              <span data-i18n="options_shortcut_summarize">Summarize the selection</span>
+              <span class="shortcut-state" data-shortcut="summarize-selection"></span>
+            </dd>
           </div>
           <div>
-            <dt>Ctrl + Maj + E</dt>
-            <dd>Résumer la page <span class="shortcut-state" data-shortcut="summarize-page"></span></dd>
+            <dt>Ctrl + Shift + E</dt>
+            <dd>
+              <span data-i18n="options_shortcut_page">Summarize the page</span>
+              <span class="shortcut-state" data-shortcut="summarize-page"></span>
+            </dd>
           </div>
         </dl>
-        <p class="hint">
-          Chrome peut conserver un ancien raccourci ou laisser le champ vide après une mise à jour.
-          Cliquez sur le crayon dans <code>chrome://extensions/shortcuts</code> (Firefox :
-          <code>about:addons</code> → « Gérer les raccourcis ») pour l’assigner. Les raccourcis
-          fonctionnent aussi directement dans la page, même si Chrome les affiche comme non assignés.
+        <p class="hint" data-i18n="options_shortcuts_hint">
+          Chrome may keep an old shortcut or leave the field empty after an update. Click the pencil
+          in chrome://extensions/shortcuts (Firefox: about:addons → “Manage shortcuts”) to assign it.
+          Shortcuts also work directly in the page, even when Chrome reports them as unassigned.
         </p>
         <div class="row">
-          <button type="button" id="copy-shortcuts-url" class="secondary">
-            Copier l’adresse des raccourcis
+          <button type="button" id="copy-shortcuts-url" class="secondary" data-i18n="options_copy_shortcuts">
+            Copy the shortcuts address
           </button>
           <span id="shortcuts-status" class="hint"></span>
         </div>
@@ -212,8 +230,8 @@
     </main>
 
     <footer class="bar">
-      <button type="button" id="save" class="primary">Enregistrer</button>
-      <button type="button" id="reset" class="secondary">Réinitialiser</button>
+      <button type="button" id="save" class="primary" data-i18n="options_save">Save</button>
+      <button type="button" id="reset" class="secondary" data-i18n="options_reset">Reset</button>
       <span id="status" class="status" role="status"></span>
     </footer>
 
@@ -224,19 +242,23 @@
           <span class="badge conn-badge"></span>
           <span class="conn-count"></span>
           <div class="conn-actions">
-            <button type="button" class="ghost" data-act="models">Charger les modèles</button>
-            <button type="button" class="ghost" data-act="test">Tester</button>
-            <button type="button" class="ghost danger" data-act="remove">Supprimer</button>
+            <button type="button" class="ghost" data-act="models" data-i18n="options_load_models">
+              Load models
+            </button>
+            <button type="button" class="ghost" data-act="test" data-i18n="options_test">Test</button>
+            <button type="button" class="ghost danger" data-act="remove" data-i18n="options_remove">
+              Remove
+            </button>
           </div>
         </div>
 
         <div class="grid">
           <div class="field">
-            <label>Nom</label>
+            <label data-i18n="options_name">Name</label>
             <input data-field="label" type="text" spellcheck="false" />
           </div>
           <div class="field">
-            <label>Type d’API</label>
+            <label data-i18n="options_api_type">API type</label>
             <select data-field="type">
               <option value="openai">OpenAI-compatible</option>
               <option value="anthropic">Anthropic</option>
@@ -246,20 +268,20 @@
         </div>
 
         <div class="field">
-          <label>URL de base</label>
+          <label data-i18n="options_base_url">Base URL</label>
           <input data-field="baseUrl" type="url" spellcheck="false" />
         </div>
 
         <div class="grid">
           <div class="field">
-            <label>Modèle par défaut</label>
+            <label data-i18n="options_default_model">Default model</label>
             <div class="picker-slot" data-field="model"></div>
           </div>
           <div class="field">
-            <label>Clé API</label>
+            <label data-i18n="options_api_key">API key</label>
             <div class="secret">
               <input data-field="apiKey" type="password" autocomplete="off" spellcheck="false" />
-              <button type="button" class="ghost" data-act="reveal">Afficher</button>
+              <button type="button" class="ghost" data-act="reveal" data-i18n="options_reveal">Show</button>
             </div>
           </div>
         </div>
@@ -276,6 +298,7 @@
       </div>
     </template>
 
+    <script src="../shared/i18n.js"></script>
     <script src="../shared/constants.js"></script>
     <script src="options.js"></script>
   </body>

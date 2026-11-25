@@ -4,6 +4,20 @@
 
   const api = globalThis.browser || globalThis.chrome;
   const LILI = globalThis.LILI || { ACTIONS: {}, SELECTION_ACTIONS: [] };
+  const I18N = globalThis.LILI_I18N || { t: (key) => key, locale: 'en' };
+  const t = (key, substitutions) => I18N.t(key, substitutions);
+
+  function localize(root) {
+    for (const element of root.querySelectorAll('[data-i18n]')) {
+      element.textContent = t(element.getAttribute('data-i18n'));
+    }
+    for (const element of root.querySelectorAll('[data-i18n-placeholder]')) {
+      element.setAttribute('placeholder', t(element.getAttribute('data-i18n-placeholder')));
+    }
+    for (const element of root.querySelectorAll('[data-i18n-title]')) {
+      element.setAttribute('title', t(element.getAttribute('data-i18n-title')));
+    }
+  }
 
   const $ = (selector) => document.querySelector(selector);
   const previewEl = $('#selection-preview');
@@ -25,11 +39,11 @@
   }
 
   function makeButton(action, primary) {
-    const meta = LILI.ACTIONS[action] || { label: action };
+    const meta = LILI.ACTIONS[action] || { labelKey: action };
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = meta.label || action;
-    button.title = meta.hint || meta.label;
+    button.textContent = t(meta.labelKey) || action;
+    button.title = t(meta.hintKey || meta.labelKey);
     if (primary) button.className = 'primary';
     button.addEventListener('click', () => {
       dispatch(action, button.dataset.origin === 'text' ? textArea.value.trim() : '');
@@ -67,9 +81,9 @@
     if (clean) {
       previewEl.textContent = clean.length > 260 ? clean.slice(0, 260) + '…' : clean;
       previewEl.classList.add('has-text');
-      countEl.textContent = selectionText.length + ' car.';
+      countEl.textContent = t('popup_chars', [String(selectionText.length)]);
     } else {
-      previewEl.textContent = 'Aucune sélection détectée.';
+      previewEl.textContent = t('popup_no_selection');
       previewEl.classList.remove('has-text');
       countEl.textContent = '';
     }
@@ -77,7 +91,7 @@
 
   async function dispatch(action, text) {
     if (!canInject || tabId == null) {
-      showNotice('Cette page ne permet pas les actions Lili.', true);
+      showNotice(t('popup_error_blocked'), true);
       return;
     }
     try {
@@ -89,9 +103,9 @@
       window.close();
     } catch (error) {
       showNotice(
-        'Impossible d’agir sur cette page : ' +
-          ((error && error.message) || 'connexion refusée') +
-          '. Recharge la page et réessaie.',
+        t('popup_error_action', [
+          (error && error.message) || t('popup_error_connection_refused'),
+        ]),
         true
       );
     }
@@ -112,6 +126,9 @@
   });
 
   (async () => {
+    localize(document);
+    document.documentElement.lang = I18N.locale;
+
     try {
       const settings = await api.runtime.sendMessage({ type: 'lili:get-settings' });
       if (settings) {
@@ -121,7 +138,8 @@
           connections.find((item) => item.id === fallback.connection) || connections[0] || null;
         const label = (connection && (connection.label || connection.id)) || '';
         const model = (connection && connection.model) || fallback.model || '';
-        $('#provider').textContent = [label, model].filter(Boolean).join(' · ') || 'Aucune connexion';
+        $('#provider').textContent =
+          [label, model].filter(Boolean).join(' · ') || t('popup_no_connection');
       }
     } catch {
       /* popup still works */
@@ -137,7 +155,7 @@
 
     if (tabId == null) {
       canInject = false;
-      showNotice('Aucun onglet actif détecté.', true);
+      showNotice(t('popup_error_no_tab'), true);
     } else {
       try {
         const selection = await api.tabs.sendMessage(tabId, { type: 'lili:get-selection' });
@@ -146,7 +164,7 @@
       } catch {
         canInject = false;
         showNotice(
-          'Cette page n’autorise pas l’injection de l’extension (page interne, PDF, Web Store). Ouvre une page web classique.',
+          t('popup_error_no_injection'),
           true
         );
         setSelection('');
